@@ -1,0 +1,55 @@
+[
+  {
+    "id": "cornell", "name": "Cornell Notes", "category": "Study", "background": "#FFFFFF",
+    "layers": [
+      { "type": "text", "text": "{{title}}", "x": 36, "y": 30, "width": "100% - 200", "height": 40, "fontSize": 20, "weight": "semibold", "design": "rounded", "color": "accentDark" },
+      { "type": "text", "text": "{{date}}", "x": "100% - 180", "y": 38, "width": 144, "height": 24, "fontSize": 11, "align": "right", "color": "#8A8A99" },
+      { "type": "line", "x1": 0, "y1": 84, "x2": "100%", "y2": 84, "color": "accent", "lineWidth": 2 },
+      { "type": "hlines", "spacing": 22, "top": 106, "bottom": 160, "left": 180, "color": "#C9D6EA", "lineWidth": 0.6 },
+      { "type": "line", "x1": 170, "y1": 84, "x2": 170, "y2": "100% - 150", "color": "#9FB4D9", "lineWidth": 1 },
+      { "type": "line", "x1": 0, "y1": "100% - 150", "x2": "100%", "y2": "100% - 150", "color": "#9FB4D9", "lineWidth": 1 },
+      { "type": "text", "text": "CUES", "x": 18, "y": 92, "width": 140, "height": 16, "fontSize": 9, "weight": "bold", "color": "#9FB4D9" },
+      { "type": "text", "text": "NOTES", "x": 182, "y": 92, "width": 200, "height": 16, "fontSize": 9, "weight": "bold", "color": "#9FB4D9" },
+      { "type": "text", "text": "SUMMARY", "x": 18, "y": "100% - 142", "width": 200, "height": 16, "fontSize": 9, "weight": "bold", "color": "#9FB4D9" }
+    ]
+  },
+  {
+    "id": "checklist", "name": "Checklist", "category": "Planning", "background": "#FFFFFF",
+    "layers": [
+      { "type": "text", "text": "To do", "x": 44, "y": 30, "width": 300, "height": 36, "fontSize": 24, "weight": "bold", "design": "rounded", "color": "accent" },
+      { "type": "hlines", "spacing": 32, "top": 96, "left": 72, "right": 36, "color": "#DCE2EE", "lineWidth": 0.7 },
+      { "type": "rect", "x": 44, "y": 76, "width": 16, "height": 16, "cornerRadius": 4, "stroke": "accent@0.6", "lineWidth": 1.4, "repeat": { "count": 30, "dy": 32 } }
+    ]
+  },
+  {
+    "id": "weekly", "name": "Weekly Planner", "category": "Planning", "background": "#FFFDF9",
+    "layers": [
+      { "type": "text", "text": "This week", "x": 36, "y": 28, "width": 300, "height": 36, "fontSize": 24, "weight": "bold", "design": "rounded", "color": "accent" },
+      { "type": "rect", "x": 36, "y": 84, "width": "50% - 42", "height": "(100% - 156) / 4", "cornerRadius": 12, "fill": "accent@0.06", "stroke": "accent@0.25", "repeat": { "count": 4, "dy": "(100% - 156) / 4 + 12" } },
+      { "type": "rect", "x": "50% + 6", "y": 84, "width": "50% - 42", "height": "(100% - 156) / 4", "cornerRadius": 12, "fill": "accent@0.06", "stroke": "accent@0.25", "repeat": { "count": 4, "dy": "(100% - 156) / 4 + 12" } },
+      { "type": "text", "text": "MONDAY", "x": 48, "y": 92, "width": 200, "height": 16, "fontSize": 10, "weight": "bold", "color": "accentDark" },
+      { "type": "text", "text": "TUESDAY", "x": 48, "y": "84 + (100% - 156) / 4 + 20", "width": 200, "height": 16, "fontSize": 10, "weight": "bold", "color": "accentDark" },
+      { "type": "text", "text": "WEDNESDAY", "x": 48, "y": "84 + (100% - 156) / 2 + 32", "width": 200, "height": 16, "fontSize": 10, "weight": "bold", "color": "accentDark" },
+      { "type": "text", "text": "THURSDAY", "x": 48, "y": "84 + (100% - 156) * 3 / 4 + 44", "width": 200, "height": 16, "fontSize": 10, "weight": "bold", "color": "accentDark" },
+      { "type": "text", "text": "FRIDAY", "x": "50% + 18", "y": 92, "width": 200, "height": 16, "fontSize": 10, "weight": "bold", "color": "accentDark" },
+      { "type": "text", "text": "SATURDAY", "x": "50% + 18", "y": "84 + (100% - 156) / 4 + 20", "width": 200, "height": 16, "fontSize": 10, "weight": "bold", "color": "accentDark" },
+      { "type": "text", "text": "SUNDAY", "x": "50% + 18", "y": "84 + (100% - 156) / 2 + 32", "width": 200, "height": 16, "fontSize": 10, "weight": "bold", "color": "accentDark" },
+      { "type": "text", "text": "NOTES", "x": "50% + 18", "y": "84 + (100% - 156) * 3 / 4 + 44", "width": 200, "height": 16, "fontSize": 10, "weight": "bold", "color": "accentDark" }
+    ]
+  },
+  {
+    "id": "music", "name": "Music Staff", "category": "Creative", "background": "#FFFFFF",
+    "layers": [ { "type": "staff", "spacing": 7, "staffGap": 44, "top": 72, "left": 54, "right": 54, "color": "#7D7D8C", "lineWidth": 0.7 } ]
+  },
+  {
+    "id": "storyboard", "name": "Storyboard", "category": "Creative", "background": "#FFFFFF",
+    "layers": [
+      { "type": "rect", "x": 36, "y": 48, "width": "50% - 42", "height": "(100% - 132) / 3 - 56", "cornerRadius": 6, "stroke": "#4A4A58", "lineWidth": 1.2, "repeat": { "count": 3, "dy": "(100% - 132) / 3 + 12" } },
+      { "type": "rect", "x": "50% + 6", "y": 48, "width": "50% - 42", "height": "(100% - 132) / 3 - 56", "cornerRadius": 6, "stroke": "#4A4A58", "lineWidth": 1.2, "repeat": { "count": 3, "dy": "(100% - 132) / 3 + 12" } },
+      { "type": "line", "x1": 36, "y1": "48 + (100% - 132) / 3 - 34", "x2": "50% - 6", "y2": "48 + (100% - 132) / 3 - 34", "color": "#CCD3E0", "lineWidth": 0.7, "repeat": { "count": 3, "dy": "(100% - 132) / 3 + 12" } },
+      { "type": "line", "x1": 36, "y1": "48 + (100% - 132) / 3 - 14", "x2": "50% - 6", "y2": "48 + (100% - 132) / 3 - 14", "color": "#CCD3E0", "lineWidth": 0.7, "repeat": { "count": 3, "dy": "(100% - 132) / 3 + 12" } },
+      { "type": "line", "x1": "50% + 6", "y1": "48 + (100% - 132) / 3 - 34", "x2": "100% - 36", "y2": "48 + (100% - 132) / 3 - 34", "color": "#CCD3E0", "lineWidth": 0.7, "repeat": { "count": 3, "dy": "(100% - 132) / 3 + 12" } },
+      { "type": "line", "x1": "50% + 6", "y1": "48 + (100% - 132) / 3 - 14", "x2": "100% - 36", "y2": "48 + (100% - 132) / 3 - 14", "color": "#CCD3E0", "lineWidth": 0.7, "repeat": { "count": 3, "dy": "(100% - 132) / 3 + 12" } }
+    ]
+  }
+]

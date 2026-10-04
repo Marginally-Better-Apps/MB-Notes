@@ -1,0 +1,510 @@
+[
+ {
+  "id": "label-todo",
+  "name": "To do",
+  "category": "Labels",
+  "canvas": {
+   "width": 200,
+   "height": 70
+  },
+  "layers": [
+   {
+    "type": "rect",
+    "x": 4,
+    "y": 4,
+    "width": 192,
+    "height": 62,
+    "cornerRadius": 31.0,
+    "fill": "white"
+   },
+   {
+    "type": "rect",
+    "x": 9,
+    "y": 9,
+    "width": 182,
+    "height": 52,
+    "cornerRadius": 26.0,
+    "fill": "#4C3AD6"
+   },
+   {
+    "type": "text",
+    "text": "TO DO",
+    "x": 9,
+    "y": 9,
+    "width": 182,
+    "height": 52,
+    "fontSize": 25.2,
+    "weight": "heavy",
+    "design": "rounded",
+    "align": "center",
+    "color": "white",
+    "style": "middle"
+   }
+  ]
+ },
+ {
+  "id": "label-important",
+  "name": "Important",
+  "category": "Labels",
+  "canvas": {
+   "width": 260,
+   "height": 70
+  },
+  "layers": [
+   {
+    "type": "rect",
+    "x": 4,
+    "y": 4,
+    "width": 252,
+    "height": 62,
+    "cornerRadius": 31.0,
+    "fill": "white"
+   },
+   {
+    "type": "rect",
+    "x": 9,
+    "y": 9,
+    "width": 242,
+    "height": 52,
+    "cornerRadius": 26.0,
+    "fill": "#FF7A45"
+   },
+   {
+    "type": "text",
+    "text": "IMPORTANT!",
+    "x": 9,
+    "y": 9,
+    "width": 242,
+    "height": 52,
+    "fontSize": 25.2,
+    "weight": "heavy",
+    "design": "rounded",
+    "align": "center",
+    "color": "white",
+    "style": "middle"
+   }
+  ]
+ },
+ {
+  "id": "label-review",
+  "name": "Review",
+  "category": "Labels",
+  "canvas": {
+   "width": 200,
+   "height": 70
+  },
+  "layers": [
+   {
+    "type": "rect",
+    "x": 4,
+    "y": 4,
+    "width": 192,
+    "height": 62,
+    "cornerRadius": 31.0,
+    "fill": "white"
+   },
+   {
+    "type": "rect",
+    "x": 9,
+    "y": 9,
+    "width": 182,
+    "height": 52,
+    "cornerRadius": 26.0,
+    "fill": "#8056F6"
+   },
+   {
+    "type": "text",
+    "text": "REVIEW",
+    "x": 9,
+    "y": 9,
+    "width": 182,
+    "height": 52,
+    "fontSize": 25.2,
+    "weight": "heavy",
+    "design": "rounded",
+    "align": "center",
+    "color": "white",
+    "style": "middle"
+   }
+  ]
+ },
+ {
+  "id": "label-done",
+  "name": "Done",
+  "category": "Labels",
+  "canvas": {
+   "width": 200,
+   "height": 70
+  },
+  "layers": [
+   {
+    "type": "rect",
+    "x": 4,
+    "y": 4,
+    "width": 192,
+    "height": 62,
+    "cornerRadius": 31.0,
+    "fill": "white"
+   },
+   {
+    "type": "rect",
+    "x": 9,
+    "y": 9,
+    "width": 182,
+    "height": 52,
+    "cornerRadius": 26.0,
+    "fill": "#3FB37F"
+   },
+   {
+    "type": "text",
+    "text": "DONE ✓",
+    "x": 9,
+    "y": 9,
+    "width": 182,
+    "height": 52,
+    "fontSize": 25.2,
+    "weight": "heavy",
+    "design": "rounded",
+    "align": "center",
+    "color": "white",
+    "style": "middle"
+   }
+  ]
+ },
+ {
+  "id": "label-due",
+  "name": "Due",
+  "category": "Labels",
+  "canvas": {
+   "width": 150,
+   "height": 70
+  },
+  "layers": [
+   {
+    "type": "rect",
+    "x": 4,
+    "y": 4,
+    "width": 142,
+    "height": 62,
+    "cornerRadius": 31.0,
+    "fill": "white"
+   },
+   {
+    "type": "rect",
+    "x": 9,
+    "y": 9,
+    "width": 132,
+    "height": 52,
+    "cornerRadius": 26.0,
+    "fill": "#E5484D"
+   },
+   {
+    "type": "text",
+    "text": "DUE",
+    "x": 9,
+    "y": 9,
+    "width": 132,
+    "height": 52,
+    "fontSize": 25.2,
+    "weight": "heavy",
+    "design": "rounded",
+    "align": "center",
+    "color": "white",
+    "style": "middle"
+   }
+  ]
+ },
+ {
+  "id": "label-quiz",
+  "name": "On the quiz",
+  "category": "Labels",
+  "canvas": {
+   "width": 270,
+   "height": 70
+  },
+  "layers": [
+   {
+    "type": "rect",
+    "x": 4,
+    "y": 4,
+    "width": 262,
+    "height": 62,
+    "cornerRadius": 31.0,
+    "fill": "white"
+   },
+   {
+    "type": "rect",
+    "x": 9,
+    "y": 9,
+    "width": 252,
+    "height": 52,
+    "cornerRadius": 26.0,
+    "fill": "#F76CA0"
+   },
+   {
+    "type": "text",
+    "text": "ON THE QUIZ",
+    "x": 9,
+    "y": 9,
+    "width": 252,
+    "height": 52,
+    "fontSize": 25.2,
+    "weight": "heavy",
+    "design": "rounded",
+    "align": "center",
+    "color": "white",
+    "style": "middle"
+   }
+  ]
+ },
+ {
+  "id": "grade-a-plus",
+  "name": "A+",
+  "category": "Labels",
+  "canvas": {
+   "width": 100,
+   "height": 100
+  },
+  "layers": [
+   {
+    "type": "ellipse",
+    "x": 4,
+    "y": 4,
+    "width": 92,
+    "height": 92,
+    "fill": "white"
+   },
+   {
+    "type": "ellipse",
+    "x": 10,
+    "y": 10,
+    "width": 80,
+    "height": 80,
+    "fill": "#E5484D"
+   },
+   {
+    "type": "ellipse",
+    "x": 16,
+    "y": 16,
+    "width": 68,
+    "height": 68,
+    "stroke": "white@0.6",
+    "lineWidth": 2,
+    "dash": [
+     4,
+     3
+    ]
+   },
+   {
+    "type": "text",
+    "text": "A+",
+    "x": 10,
+    "y": 10,
+    "width": 80,
+    "height": 80,
+    "fontSize": 38,
+    "weight": "black",
+    "design": "rounded",
+    "align": "center",
+    "color": "white",
+    "style": "middle"
+   }
+  ]
+ },
+ {
+  "id": "stamp-exam",
+  "name": "Exam stamp",
+  "category": "Labels",
+  "canvas": {
+   "width": 160,
+   "height": 90
+  },
+  "layers": [
+   {
+    "type": "rect",
+    "x": 6,
+    "y": 6,
+    "width": 148,
+    "height": 78,
+    "cornerRadius": 12,
+    "stroke": "#E5484D",
+    "lineWidth": 5
+   },
+   {
+    "type": "rect",
+    "x": 14,
+    "y": 14,
+    "width": 132,
+    "height": 62,
+    "cornerRadius": 8,
+    "stroke": "#E5484D@0.6",
+    "lineWidth": 1.5
+   },
+   {
+    "type": "text",
+    "text": "EXAM",
+    "x": 6,
+    "y": 6,
+    "width": 148,
+    "height": 78,
+    "fontSize": 36,
+    "weight": "black",
+    "align": "center",
+    "color": "#E5484D",
+    "style": "middle"
+   }
+  ]
+ },
+ {
+  "id": "washi-pink",
+  "name": "Pink washi",
+  "category": "Tape",
+  "canvas": {
+   "width": 220,
+   "height": 50
+  },
+  "outlined": false,
+  "layers": [
+   {
+    "type": "rect",
+    "x": 0,
+    "y": 4,
+    "width": 220,
+    "height": 42,
+    "fill": "#F76CA0@0.72"
+   },
+   {
+    "type": "dots",
+    "spacing": 12,
+    "top": 13,
+    "bottom": 10,
+    "left": 8,
+    "right": 4,
+    "radius": 2.2,
+    "color": "white@0.55"
+   }
+  ]
+ },
+ {
+  "id": "washi-mint",
+  "name": "Mint washi",
+  "category": "Tape",
+  "canvas": {
+   "width": 220,
+   "height": 50
+  },
+  "outlined": false,
+  "layers": [
+   {
+    "type": "rect",
+    "x": 0,
+    "y": 4,
+    "width": 220,
+    "height": 42,
+    "fill": "#3FB37F@0.6"
+   },
+   {
+    "type": "hlines",
+    "spacing": 8,
+    "top": 10,
+    "bottom": 6,
+    "left": 0,
+    "right": 0,
+    "lineWidth": 3,
+    "color": "white@0.45"
+   }
+  ]
+ },
+ {
+  "id": "washi-sunset",
+  "name": "Sunset washi",
+  "category": "Tape",
+  "canvas": {
+   "width": 220,
+   "height": 50
+  },
+  "outlined": false,
+  "layers": [
+   {
+    "type": "gradient",
+    "x": 0,
+    "y": 4,
+    "width": 220,
+    "height": 42,
+    "colors": [
+     "#FFA678@0.85",
+     "#F76CA0@0.85",
+     "#8056F6@0.85"
+    ],
+    "angle": 0
+   },
+   {
+    "type": "path",
+    "d": "M12 0c.8 6.5 4.7 10.9 12 12-7.3 1.1-11.2 5.5-12 12-.8-6.5-4.7-10.9-12-12C7.3 10.9 11.2 6.5 12 0z",
+    "viewBox": [
+     0,
+     0,
+     24,
+     24
+    ],
+    "x": 14,
+    "y": 15,
+    "width": 20,
+    "height": 20,
+    "fill": "white@0.8",
+    "repeat": {
+     "count": 6,
+     "dx": 36
+    }
+   }
+  ]
+ },
+ {
+  "id": "speech-bubble",
+  "name": "Speech bubble",
+  "category": "Labels",
+  "canvas": {
+   "width": 120,
+   "height": 100
+  },
+  "layers": [
+   {
+    "type": "path",
+    "d": "M20 8h80a14 14 0 0 1 14 14v40a14 14 0 0 1-14 14H52l-22 18 4-18H20A14 14 0 0 1 6 62V22A14 14 0 0 1 20 8z",
+    "viewBox": [
+     0,
+     0,
+     120,
+     100
+    ],
+    "fill": "white",
+    "stroke": "#4C3AD6",
+    "lineWidth": 3
+   }
+  ]
+ },
+ {
+  "id": "arrow-doodle",
+  "name": "Arrow",
+  "category": "Labels",
+  "canvas": {
+   "width": 140,
+   "height": 70
+  },
+  "outlined": false,
+  "layers": [
+   {
+    "type": "path",
+    "d": "M8 52 C 40 10, 80 70, 118 24 M 100 20 L 120 22 L 116 42",
+    "viewBox": [
+     0,
+     0,
+     140,
+     70
+    ],
+    "stroke": "#4C3AD6",
+    "lineWidth": 4
+   }
+  ]
+ }
+]

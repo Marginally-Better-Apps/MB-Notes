@@ -1,0 +1,20 @@
+[
+  {
+    "id": "cafe-lined", "name": "Café Lined", "category": "Café", "background": "#FFF8EE",
+    "parameters": { "spacing": { "label": "Line spacing", "default": 24, "min": 16, "max": 40, "step": 1 } },
+    "layers": [
+      { "type": "hlines", "spacing": "$spacing", "top": "$spacing * 3", "color": "#D9C3A5", "lineWidth": 0.7 },
+      { "type": "line", "x1": 70, "y1": 0, "x2": 70, "y2": "100%", "color": "accent", "lineWidth": 1 },
+      { "type": "image", "src": "images/croissant.png", "x": "100% - 70", "y": 14, "width": 50, "height": 50, "opacity": 0.9 }
+    ]
+  },
+  {
+    "id": "cafe-menu", "name": "Menu Card", "category": "Café", "role": "title", "background": "#F3E5D0",
+    "layers": [
+      { "type": "rect", "x": 36, "y": 36, "width": "100% - 72", "height": "100% - 72", "cornerRadius": 18, "stroke": "#6F4E37", "lineWidth": 2, "dash": [8, 6] },
+      { "type": "text", "text": "{{title}}", "x": 60, "y": "30%", "width": "100% - 120", "height": 90, "fontSize": 42, "weight": "bold", "design": "serif", "align": "center", "color": "#4A3222", "style": "middle" },
+      { "type": "text", "text": "{{date}}", "x": 60, "y": "30% + 96", "width": "100% - 120", "height": 22, "fontSize": 13, "align": "center", "color": "#8C6A50" },
+      { "type": "image", "src": "images/croissant.png", "x": "50% - 60", "y": "55%", "width": 120, "height": 120 }
+    ]
+  }
+]

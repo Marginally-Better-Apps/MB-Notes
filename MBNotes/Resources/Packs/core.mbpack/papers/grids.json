@@ -1,0 +1,29 @@
+[
+  {
+    "id": "dots", "name": "Dot Grid", "category": "Grid", "background": "#FFFFFF",
+    "parameters": { "spacing": { "label": "Dot spacing", "default": 18, "min": 10, "max": 40, "step": 1 } },
+    "layers": [ { "type": "dots", "spacing": "$spacing", "radius": 1.1, "color": "#B8BCC8" } ]
+  },
+  {
+    "id": "dots-cream", "name": "Dot Grid (Cream)", "category": "Grid", "background": "#FFF9EE",
+    "parameters": { "spacing": { "label": "Dot spacing", "default": 18, "min": 10, "max": 40, "step": 1 } },
+    "layers": [ { "type": "dots", "spacing": "$spacing", "radius": 1.1, "color": "#C9B9A0" } ]
+  },
+  {
+    "id": "grid", "name": "Graph", "category": "Grid", "background": "#FFFFFF",
+    "parameters": { "spacing": { "label": "Square size", "default": 18, "min": 8, "max": 40, "step": 1 } },
+    "layers": [ { "type": "grid", "spacing": "$spacing", "color": "#D9E0EE", "lineWidth": 0.5, "majorEvery": 5, "majorColor": "#AEBBD8", "majorWidth": 0.8 } ]
+  },
+  {
+    "id": "engineering", "name": "Engineering", "category": "Grid", "background": "#F3FAF3",
+    "layers": [ { "type": "grid", "spacing": 14.4, "color": "#C5E3CA", "lineWidth": 0.4, "majorEvery": 5, "majorColor": "#80C08C", "majorWidth": 0.9 } ]
+  },
+  {
+    "id": "isometric", "name": "Isometric", "category": "Grid", "background": "#FFFFFF",
+    "layers": [ { "type": "isometric", "spacing": 22, "color": "#D3D9E8", "lineWidth": 0.5 } ]
+  },
+  {
+    "id": "isometric-dots", "name": "Isometric Dots", "category": "Grid", "background": "#FFFFFF",
+    "layers": [ { "type": "isometric", "style": "dots", "spacing": 22, "radius": 1.1, "color": "#AEB5C6" } ]
+  }
+]

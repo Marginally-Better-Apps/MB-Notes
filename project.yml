@@ -1,0 +1,81 @@
+name: MBNotes
+options:
+  bundleIdPrefix: com.marginallybetter
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    CURRENT_PROJECT_VERSION: 1
+    MARKETING_VERSION: 0.1.0
+packages:
+  NoteEngine:
+    path: Packages/NoteEngine
+  NoteIntelligence:
+    path: Packages/NoteIntelligence
+targets:
+  MBNotes:
+    type: application
+    platform: iOS
+    sources:
+      - path: MBNotes
+        excludes:
+          - "Resources/Packs"
+      - path: MBNotes/Resources/Packs
+        type: folder
+        buildPhase: resources
+    dependencies:
+      - package: NoteEngine
+      - package: NoteIntelligence
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.marginallybetter.notes
+        PRODUCT_NAME: MBNotes
+        PRODUCT_MODULE_NAME: MBNotes
+        TARGETED_DEVICE_FAMILY: "1,2"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_FILE: MBNotes/Resources/Info.plist
+        INFOPLIST_KEY_CFBundleDisplayName: MB Notes
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.productivity
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: MB Notes records audio only when you start a recording, so you can play it back alongside your notes.
+        INFOPLIST_KEY_NSSpeechRecognitionUsageDescription: MB Notes transcribes your recordings on this device so you can search and read them.
+        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: MB Notes inserts photos you choose into your notes.
+        INFOPLIST_KEY_NSCameraUsageDescription: MB Notes uses the camera only when you choose to take a photo for a note.
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIFileSharingEnabled: YES
+        INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_UIBackgroundModes: audio
+        SUPPORTS_MACCATALYST: NO
+        ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES: "AppIcon-Midnight AppIcon-Mint AppIcon-Ocean AppIcon-Lemonade AppIcon-Bubblegum AppIcon-Kraft AppIcon-Graphite"
+        ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS: YES
+  MBNotesTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: MBNotesTests
+    dependencies:
+      - target: MBNotes
+      - package: NoteEngine
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.marginallybetter.notes.tests
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  MBNotes:
+    build:
+      targets:
+        MBNotes: all
+        MBNotesTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - MBNotesTests
+        - package: NoteEngine/NoteEngineTests

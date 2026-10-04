@@ -1,0 +1,194 @@
+[
+ {
+  "id": "emoji-star",
+  "name": "Star",
+  "category": "Cute",
+  "emoji": "⭐️"
+ },
+ {
+  "id": "emoji-sparkles",
+  "name": "Sparkles",
+  "category": "Cute",
+  "emoji": "✨"
+ },
+ {
+  "id": "emoji-blossom",
+  "name": "Blossom",
+  "category": "Cute",
+  "emoji": "🌸"
+ },
+ {
+  "id": "emoji-strawberry",
+  "name": "Strawberry",
+  "category": "Cute",
+  "emoji": "🍓"
+ },
+ {
+  "id": "emoji-rainbow",
+  "name": "Rainbow",
+  "category": "Cute",
+  "emoji": "🌈"
+ },
+ {
+  "id": "emoji-cloud",
+  "name": "Cloud",
+  "category": "Cute",
+  "emoji": "☁️"
+ },
+ {
+  "id": "emoji-sun",
+  "name": "Sun",
+  "category": "Cute",
+  "emoji": "☀️"
+ },
+ {
+  "id": "emoji-moon",
+  "name": "Moon",
+  "category": "Cute",
+  "emoji": "🌙"
+ },
+ {
+  "id": "emoji-cat",
+  "name": "Cat",
+  "category": "Cute",
+  "emoji": "🐱"
+ },
+ {
+  "id": "emoji-bear",
+  "name": "Bear",
+  "category": "Cute",
+  "emoji": "🐻"
+ },
+ {
+  "id": "emoji-frog",
+  "name": "Frog",
+  "category": "Cute",
+  "emoji": "🐸"
+ },
+ {
+  "id": "emoji-butterfly",
+  "name": "Butterfly",
+  "category": "Cute",
+  "emoji": "🦋"
+ },
+ {
+  "id": "emoji-clover",
+  "name": "Clover",
+  "category": "Cute",
+  "emoji": "🍀"
+ },
+ {
+  "id": "emoji-fire",
+  "name": "Fire",
+  "category": "Cute",
+  "emoji": "🔥"
+ },
+ {
+  "id": "emoji-bulb",
+  "name": "Idea",
+  "category": "Cute",
+  "emoji": "💡"
+ },
+ {
+  "id": "emoji-check",
+  "name": "Done",
+  "category": "Cute",
+  "emoji": "✅"
+ },
+ {
+  "id": "emoji-heart",
+  "name": "Heart",
+  "category": "Cute",
+  "emoji": "❤️"
+ },
+ {
+  "id": "emoji-bow",
+  "name": "Bow",
+  "category": "Cute",
+  "emoji": "🎀"
+ },
+ {
+  "id": "emoji-pin",
+  "name": "Pin",
+  "category": "Cute",
+  "emoji": "📌"
+ },
+ {
+  "id": "emoji-test-tube",
+  "name": "Test tube",
+  "category": "Cute",
+  "emoji": "🧪"
+ },
+ {
+  "id": "emoji-dna",
+  "name": "DNA",
+  "category": "Cute",
+  "emoji": "🧬"
+ },
+ {
+  "id": "emoji-ruler",
+  "name": "Ruler",
+  "category": "Cute",
+  "emoji": "📐"
+ },
+ {
+  "id": "emoji-music",
+  "name": "Music",
+  "category": "Cute",
+  "emoji": "🎵"
+ },
+ {
+  "id": "emoji-tea",
+  "name": "Tea",
+  "category": "Cute",
+  "emoji": "🍵"
+ },
+ {
+  "id": "emoji-brain",
+  "name": "Brain",
+  "category": "Cute",
+  "emoji": "🧠"
+ },
+ {
+  "id": "emoji-trophy",
+  "name": "Trophy",
+  "category": "Cute",
+  "emoji": "🏆"
+ },
+ {
+  "id": "emoji-target",
+  "name": "Target",
+  "category": "Cute",
+  "emoji": "🎯"
+ },
+ {
+  "id": "emoji-books",
+  "name": "Books",
+  "category": "Cute",
+  "emoji": "📚"
+ },
+ {
+  "id": "emoji-pencil",
+  "name": "Pencil",
+  "category": "Cute",
+  "emoji": "✏️"
+ },
+ {
+  "id": "emoji-rocket",
+  "name": "Rocket",
+  "category": "Cute",
+  "emoji": "🚀"
+ },
+ {
+  "id": "emoji-globe",
+  "name": "Globe",
+  "category": "Cute",
+  "emoji": "🌍"
+ },
+ {
+  "id": "emoji-hundred",
+  "name": "100",
+  "category": "Cute",
+  "emoji": "💯"
+ }
+]

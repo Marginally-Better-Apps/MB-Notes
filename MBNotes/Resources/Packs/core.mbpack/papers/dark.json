@@ -1,0 +1,17 @@
+[
+  {
+    "id": "chalkboard", "name": "Chalkboard", "category": "Dark", "background": "#203A33",
+    "layers": [ { "type": "grid", "spacing": 22, "color": "#FFFFFF@0.07", "lineWidth": 0.5 } ]
+  },
+  {
+    "id": "midnight-lined", "name": "Midnight Lined", "category": "Dark", "background": "#1C1B2E",
+    "layers": [
+      { "type": "hlines", "spacing": 24, "top": 96, "color": "#FFFFFF@0.13", "lineWidth": 0.7 },
+      { "type": "line", "x1": 72, "y1": 0, "x2": 72, "y2": "100%", "color": "#F76CA0@0.5", "lineWidth": 1 }
+    ]
+  },
+  {
+    "id": "midnight-dots", "name": "Midnight Dots", "category": "Dark", "background": "#1C1B2E",
+    "layers": [ { "type": "dots", "spacing": 18, "radius": 1.1, "color": "#FFFFFF@0.22" } ]
+  }
+]

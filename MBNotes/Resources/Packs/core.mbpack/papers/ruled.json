@@ -1,0 +1,44 @@
+[
+  { "id": "blank", "name": "Blank", "category": "Basic", "background": "#FFFFFF", "layers": [] },
+  { "id": "blank-cream", "name": "Cream", "category": "Basic", "background": "#FFFBF2", "layers": [] },
+  {
+    "id": "lined", "name": "College Ruled", "category": "Lined", "background": "#FFFDF7",
+    "parameters": {
+      "spacing": { "label": "Line spacing", "default": 22, "min": 14, "max": 40, "step": 1 },
+      "margin": { "label": "Margin", "default": 72, "min": 0, "max": 160, "step": 4 }
+    },
+    "layers": [
+      { "type": "hlines", "spacing": "$spacing", "top": "$spacing * 4", "color": "#A9C7E8", "lineWidth": 0.7 },
+      { "type": "line", "x1": "$margin", "y1": 0, "x2": "$margin", "y2": "100%", "color": "#F2A0A0", "lineWidth": 1 }
+    ]
+  },
+  {
+    "id": "lined-wide", "name": "Wide Ruled", "category": "Lined", "background": "#FFFDF7",
+    "parameters": { "spacing": { "label": "Line spacing", "default": 28, "min": 18, "max": 48, "step": 1 } },
+    "layers": [
+      { "type": "hlines", "spacing": "$spacing", "top": "$spacing * 3", "color": "#A9C7E8", "lineWidth": 0.8 },
+      { "type": "line", "x1": 80, "y1": 0, "x2": 80, "y2": "100%", "color": "#F2A0A0", "lineWidth": 1 }
+    ]
+  },
+  {
+    "id": "lined-narrow", "name": "Narrow Ruled", "category": "Lined", "background": "#FFFFFF",
+    "parameters": { "spacing": { "label": "Line spacing", "default": 18, "min": 12, "max": 30, "step": 1 } },
+    "layers": [ { "type": "hlines", "spacing": "$spacing", "top": "$spacing * 3", "left": 36, "right": 36, "color": "#C9D6EA", "lineWidth": 0.6 } ]
+  },
+  {
+    "id": "legal", "name": "Legal Pad", "category": "Lined", "background": "#FFF4A8",
+    "layers": [
+      { "type": "hlines", "spacing": 24, "top": 96, "color": "#7FA7D9", "lineWidth": 0.7 },
+      { "type": "line", "x1": 0, "y1": 72, "x2": "100%", "y2": 72, "color": "#7FA7D9", "lineWidth": 1.6 },
+      { "type": "line", "x1": 78, "y1": 0, "x2": 78, "y2": "100%", "color": "#E5484D", "lineWidth": 0.8 },
+      { "type": "line", "x1": 82, "y1": 0, "x2": 82, "y2": "100%", "color": "#E5484D", "lineWidth": 0.8 }
+    ]
+  },
+  {
+    "id": "sunset-dots", "name": "Sunset Dots", "category": "Cute", "background": "#FFFBF5",
+    "layers": [
+      { "type": "gradient", "x": 0, "y": 0, "width": "100%", "height": 10, "colors": ["#FFA678", "#F76CA0", "#8056F6"], "angle": 0 },
+      { "type": "dots", "spacing": 20, "top": 60, "left": 26, "right": 26, "bottom": 30, "radius": 1.2, "color": "#F76CA0@0.45" }
+    ]
+  }
+]
