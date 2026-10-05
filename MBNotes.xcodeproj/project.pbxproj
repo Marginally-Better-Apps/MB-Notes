@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		04D3BC9C1FE6BA573512179B /* NoteIntelligence in Frameworks */ = {isa = PBXBuildFile; productRef = 3CE0A42E9302267C4F55928B /* NoteIntelligence */; };
+		127C9046DDD9A8E0966E89EB /* ModelsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6DA4DAE8526CF6227F64A2A /* ModelsView.swift */; };
 		18E979472233EF7C15E9F394 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6DCA1148B648FAA45ADC0544 /* Assets.xcassets */; };
 		2E1F943CA100AA87E1B35B28 /* FolderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62BA50A3B9D2AF05DED04F8B /* FolderView.swift */; };
 		3ABD3C055E2EDD60186B7414 /* NoteEngine in Frameworks */ = {isa = PBXBuildFile; productRef = 8136D9D6B3DF51CE76198A6B /* NoteEngine */; };
@@ -23,16 +24,21 @@
 		6BC9C1D0CDA86907E0C295B7 /* PacksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B06EEC007FAD593F8ADAD46 /* PacksView.swift */; };
 		8372EEA2E2D71ADA36D7781B /* PageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13F0CC620068A3CA98AD6850 /* PageView.swift */; };
 		86479BB9755EFEE13BC739E5 /* MBNotesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 941DC9A142D344145AF28C47 /* MBNotesTests.swift */; };
+		8C5B5E058C7604EF37E624E9 /* LibraryItemMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397AC5A6F5D1138C339FBB13 /* LibraryItemMenu.swift */; };
 		8CD72FC846BBEE9CD0C0CE93 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D8BFCC4A1C3084D918A0EC9 /* RootView.swift */; };
 		9541540E50636893D64A83D1 /* FolderEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAA35A82227DC8E8B1568C68 /* FolderEditorSheet.swift */; };
+		9C299FFE18970BDDEFE39B3E /* DocumentScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0758BF6E47C11A4F00898618 /* DocumentScanner.swift */; };
 		B9CC55B04EFC0671E5B6E451 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17C149B7F50C4129B70055E5 /* AppModel.swift */; };
 		BA172BA91AA93B8D7F77EDA2 /* LibraryTiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01A2B3B62ECA93924DA8E740 /* LibraryTiles.swift */; };
 		BE953090EF311F8ABA1AD3FE /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B2F3798FE4584040601A017 /* Theme.swift */; };
+		C018845A2171D66B292D210A /* NoteExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B1BBA872FDB1FDC5B814328 /* NoteExport.swift */; };
+		C49855970CF3A1760EA48A28 /* CollectionViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B287DA27DA324DA1E3414F0E /* CollectionViews.swift */; };
 		D26BA1477AF1B5B79263F16C /* NoteCanvasController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 174CF701B2AC78DC08252AD3 /* NoteCanvasController.swift */; };
 		D3C14348EAE2E1C72A826738 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6CC8FA8004EC2B65D6796FC /* SettingsView.swift */; };
 		E89F76366CE927642592F59D /* EditorSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF4A69A09A7B02DC8A292B06 /* EditorSheets.swift */; };
 		EADFABD02C17D8382728E6BE /* RecordingController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A02D64C5201929A51FE7D1D /* RecordingController.swift */; };
 		F9537D0497A39A95C0C8809C /* EditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7151FE54BE4F9BC2E5CE74B9 /* EditorView.swift */; };
+		FAF522309CB865519C63F314 /* SceneModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 094148C52E54311309803ECD /* SceneModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -47,6 +53,8 @@
 
 /* Begin PBXFileReference section */
 		01A2B3B62ECA93924DA8E740 /* LibraryTiles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryTiles.swift; sourceTree = "<group>"; };
+		0758BF6E47C11A4F00898618 /* DocumentScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentScanner.swift; sourceTree = "<group>"; };
+		094148C52E54311309803ECD /* SceneModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneModel.swift; sourceTree = "<group>"; };
 		0A02D64C5201929A51FE7D1D /* RecordingController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingController.swift; sourceTree = "<group>"; };
 		0B2F3798FE4584040601A017 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		0BC0E168C50959D1C1D8D819 /* Packs */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Packs; path = MBNotes/Resources/Packs; sourceTree = SOURCE_ROOT; };
@@ -56,6 +64,8 @@
 		1D8BFCC4A1C3084D918A0EC9 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		226E83D60269473ABE4331D8 /* Search.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Search.swift; sourceTree = "<group>"; };
 		236057EE41F367AEF12BBFAA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		2B1BBA872FDB1FDC5B814328 /* NoteExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteExport.swift; sourceTree = "<group>"; };
+		397AC5A6F5D1138C339FBB13 /* LibraryItemMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryItemMenu.swift; sourceTree = "<group>"; };
 		3B1D34AB9E6D9A35E76ED3DF /* NoteIntelligence */ = {isa = PBXFileReference; lastKnownFileType = folder; name = NoteIntelligence; path = Packages/NoteIntelligence; sourceTree = SOURCE_ROOT; };
 		3B9E3746DFE046E32F7D9F20 /* MBNotes.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = MBNotes.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3C85AC778D2512F286FDFC5A /* RecordingViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingViews.swift; sourceTree = "<group>"; };
@@ -73,6 +83,8 @@
 		A57EBACF341FE22D24D058B8 /* NoteEngine */ = {isa = PBXFileReference; lastKnownFileType = folder; name = NoteEngine; path = Packages/NoteEngine; sourceTree = SOURCE_ROOT; };
 		A6CC8FA8004EC2B65D6796FC /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		AF4A69A09A7B02DC8A292B06 /* EditorSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorSheets.swift; sourceTree = "<group>"; };
+		B287DA27DA324DA1E3414F0E /* CollectionViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionViews.swift; sourceTree = "<group>"; };
+		B6DA4DAE8526CF6227F64A2A /* ModelsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelsView.swift; sourceTree = "<group>"; };
 		CAA35A82227DC8E8B1568C68 /* FolderEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderEditorSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -100,8 +112,11 @@
 		0587C01F46681FF185231EA8 /* Library */ = {
 			isa = PBXGroup;
 			children = (
+				B287DA27DA324DA1E3414F0E /* CollectionViews.swift */,
+				0758BF6E47C11A4F00898618 /* DocumentScanner.swift */,
 				CAA35A82227DC8E8B1568C68 /* FolderEditorSheet.swift */,
 				62BA50A3B9D2AF05DED04F8B /* FolderView.swift */,
+				397AC5A6F5D1138C339FBB13 /* LibraryItemMenu.swift */,
 				01A2B3B62ECA93924DA8E740 /* LibraryTiles.swift */,
 				89A17DB764C7803FE027B1E5 /* NewNoteSheet.swift */,
 				1D8BFCC4A1C3084D918A0EC9 /* RootView.swift */,
@@ -115,6 +130,7 @@
 			children = (
 				17C149B7F50C4129B70055E5 /* AppModel.swift */,
 				77E8BF6FE4076603514BAC1D /* MBNotesApp.swift */,
+				094148C52E54311309803ECD /* SceneModel.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -151,6 +167,7 @@
 		631859F8E4737DC186C54D80 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				B6DA4DAE8526CF6227F64A2A /* ModelsView.swift */,
 				7B06EEC007FAD593F8ADAD46 /* PacksView.swift */,
 				A6CC8FA8004EC2B65D6796FC /* SettingsView.swift */,
 			);
@@ -177,6 +194,7 @@
 		AD9E6D4BE5E5439BD12F415A /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				2B1BBA872FDB1FDC5B814328 /* NoteExport.swift */,
 				0B2F3798FE4584040601A017 /* Theme.swift */,
 			);
 			path = Shared;
@@ -325,21 +343,27 @@
 			files = (
 				5DFFBBF11E23C49EE6852083 /* AIPanel.swift in Sources */,
 				B9CC55B04EFC0671E5B6E451 /* AppModel.swift in Sources */,
+				C49855970CF3A1760EA48A28 /* CollectionViews.swift in Sources */,
+				9C299FFE18970BDDEFE39B3E /* DocumentScanner.swift in Sources */,
 				569C621B9283598EACB208FC /* EditorModel.swift in Sources */,
 				E89F76366CE927642592F59D /* EditorSheets.swift in Sources */,
 				F9537D0497A39A95C0C8809C /* EditorView.swift in Sources */,
 				555497DBE2DF57E5AD8499EC /* ElementViews.swift in Sources */,
 				9541540E50636893D64A83D1 /* FolderEditorSheet.swift in Sources */,
 				2E1F943CA100AA87E1B35B28 /* FolderView.swift in Sources */,
+				8C5B5E058C7604EF37E624E9 /* LibraryItemMenu.swift in Sources */,
 				BA172BA91AA93B8D7F77EDA2 /* LibraryTiles.swift in Sources */,
 				5FFEA11D2666D59D9D752514 /* MBNotesApp.swift in Sources */,
+				127C9046DDD9A8E0966E89EB /* ModelsView.swift in Sources */,
 				579BE5AEEBAF9F9D1B5AFA35 /* NewNoteSheet.swift in Sources */,
 				D26BA1477AF1B5B79263F16C /* NoteCanvasController.swift in Sources */,
+				C018845A2171D66B292D210A /* NoteExport.swift in Sources */,
 				6BC9C1D0CDA86907E0C295B7 /* PacksView.swift in Sources */,
 				8372EEA2E2D71ADA36D7781B /* PageView.swift in Sources */,
 				EADFABD02C17D8382728E6BE /* RecordingController.swift in Sources */,
 				3B005B1149E90DF17445BEE2 /* RecordingViews.swift in Sources */,
 				8CD72FC846BBEE9CD0C0CE93 /* RootView.swift in Sources */,
+				FAF522309CB865519C63F314 /* SceneModel.swift in Sources */,
 				637F523D8672DE44CA57FFD9 /* Search.swift in Sources */,
 				D3C14348EAE2E1C72A826738 /* SettingsView.swift in Sources */,
 				BE953090EF311F8ABA1AD3FE /* Theme.swift in Sources */,
@@ -377,7 +401,7 @@
 		53EBB801F546F40A3E8CC69C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIcon-Midnight AppIcon-Mint AppIcon-Ocean AppIcon-Lemonade AppIcon-Bubblegum AppIcon-Kraft AppIcon-Graphite";
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIcon-Graphite AppIcon-Ocean AppIcon-Sage AppIcon-Lagoon AppIcon-Ember AppIcon-Cherry AppIcon-Rose AppIcon-Honey AppIcon-Plum AppIcon-Indigo AppIcon-Sepia";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
@@ -392,10 +416,7 @@
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "MB Notes inserts photos you choose into your notes.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "MB Notes transcribes your recordings on this device so you can search and read them.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIBackgroundModes = audio;
-				INFOPLIST_KEY_UIFileSharingEnabled = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UIRequiresFullScreen = NO;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -554,7 +575,7 @@
 		A453AF884A84603A3EC8279C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIcon-Midnight AppIcon-Mint AppIcon-Ocean AppIcon-Lemonade AppIcon-Bubblegum AppIcon-Kraft AppIcon-Graphite";
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIcon-Graphite AppIcon-Ocean AppIcon-Sage AppIcon-Lagoon AppIcon-Ember AppIcon-Cherry AppIcon-Rose AppIcon-Honey AppIcon-Plum AppIcon-Indigo AppIcon-Sepia";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
@@ -569,10 +590,7 @@
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "MB Notes inserts photos you choose into your notes.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "MB Notes transcribes your recordings on this device so you can search and read them.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIBackgroundModes = audio;
-				INFOPLIST_KEY_UIFileSharingEnabled = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UIRequiresFullScreen = NO;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (

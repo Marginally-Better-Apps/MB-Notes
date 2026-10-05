@@ -8,7 +8,7 @@ MB Notes keeps intelligence on the device by default. Small specialized models h
 
 | Model | What it does | Size | How MB Notes uses it | Delivery |
 | --- | --- | --- | --- | --- |
-| **Shapes** | Turns one hand-drawn stroke into a clean rectangle, ellipse, triangle, star, or line | 0.2 MB Core ML | Shape snapping in the editor: draw, pause, and the shape is previewed; lift to keep it. Undo works. | Downloads quietly the first time it's needed |
+| **Shapes** | Classifies one hand-drawn stroke as a rectangle, ellipse, triangle, star, or line | 0.2 MB Core ML | Optional. The editor's own `StrokeBeautifier` (in NoteEngine, plain geometry) handles lines, arrows, elbow connectors, polygons, stars, and ellipses; Shapes is kept as an extra classifier. | Downloads quietly the first time it's needed |
 | **Voz** | Speech to text with word timings; Parakeet TDT 0.6B v3, about 300× real time on an iPhone, 25 European languages | 467 MB | Re-transcribes a recording after you stop, for better accuracy and word-level timings | Download button in Settings |
 | **Uhm** | Finds um, uh, and hmm from audio, frame by frame | 45 MB | Marks fillers so playback can skip them | Download button |
 | **Clear** | Speech enhancement: removes noise and echo, normalizes loudness; DeepFilterNet 3 | 9 MB | Optional cleaned-up copy of a recording for playback | Downloads quietly |
@@ -31,7 +31,7 @@ Desert Ant's speaker model is still in closed beta, so speaker labels use [Fluid
 
 ## Live transcription: Apple SpeechAnalyzer
 
-During recording, Apple's on-device `SpeechTranscriber` (iOS 26) produces a live transcript with timings. It's built into the OS, costs no download, and keeps working when Voz isn't installed.
+During recording, Apple's on-device `SpeechTranscriber` (iOS 26) produces a live transcript with timings. It's built into the OS and keeps working when Voz isn't installed. The first time a language is used, iOS downloads its speech model; recording starts right away and the transcript joins in once the model is ready (the recording bar says "Downloading the speech model…" meanwhile).
 
 ## How models ship
 
@@ -41,7 +41,21 @@ During recording, Apple's on-device `SpeechTranscriber` (iOS 26) produces a live
 | Quiet download on first use | Shapes, Clear, Gist | A few MB, so asking would be noise |
 | Explicit download in **Settings › On-device models** | Voz, Uhm, Title, speaker labels, local LLM | Tens to hundreds of MB, so the user decides |
 
-Nothing is bundled in the app binary. That keeps the App Store download small, and Desert Ant's SDK caches weights from Hugging Face anyway. Shapes is small enough to bundle later for instant offline snapping. Each model can be deleted individually in Settings.
+Nothing is bundled in the app binary. That keeps the App Store download small, and Desert Ant's SDK caches weights from Hugging Face anyway. Each model can be switched off (kept on disk, not used) or deleted individually in Settings. Features that depend on a model show as unavailable while it is off.
+
+Downloads report real phases: bytes received with a rate and time estimate, then **Optimizing for this device…** while Core ML specializes the model for the Neural Engine (tens of seconds, once), then **Ready**. Hugging Face downloads are checksummed and only count as complete once a marker file is written, so an interrupted download never looks finished.
+
+## Shape snapping
+
+Shape snapping is deterministic. Draw a shape and hold the pen still at the end for about a third of a second; the stroke is replaced by the fitted shape, which undo reverts. `StrokeBeautifier` resamples the stroke, finds corners with a ShortStraw-style straw test, and fits:
+
+- lines, snapped to 45° steps when close;
+- arrows, from a single stroke whose tail doubles back, or from a short caret drawn right after a line;
+- elbow connectors and zigzags (straight runs between corners);
+- triangles, rectangles (right angles enforced, squares made square), regular polygons, and stars;
+- ellipses, snapped to circles when nearly round.
+
+Handwriting is never touched because it is not held at the end. The algorithms are published ones (ShortStraw, PaleoSketch-style tests, moment-based ellipse fitting) written from scratch here under MIT.
 
 ## AI providers
 

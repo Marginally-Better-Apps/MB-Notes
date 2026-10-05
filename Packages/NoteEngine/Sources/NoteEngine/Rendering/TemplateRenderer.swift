@@ -68,14 +68,6 @@ public enum TemplateRenderer {
             drawCenteredText(emoji, in: ctx, rect: rect, fontSize: rect.height * 0.82, color: CGColor(srgbRed: 0, green: 0, blue: 0, alpha: 1))
             return
         }
-        if let symbol = sticker.symbol {
-            let tint = ColorSpec.color(sticker.tint, palette: environment.palette) ?? environment.palette.accent
-            if sticker.outlined {
-                drawSymbol(symbol, in: ctx, rect: rect, color: CGColor(srgbRed: 1, green: 1, blue: 1, alpha: 1), outline: max(2, rect.width * 0.06))
-            }
-            drawSymbol(symbol, in: ctx, rect: rect.insetBy(dx: rect.width * 0.08, dy: rect.height * 0.08), color: tint, outline: 0)
-            return
-        }
         if let image = sticker.image, let url = environment.assetURL(image) {
             drawAsset(url, page: 0, in: ctx, rect: rect, fill: false)
             return
@@ -291,6 +283,10 @@ public enum TemplateRenderer {
             }
             fillAndStroke(path, layer: layer, in: ctx, env: env)
 
+        case "star":
+            let rect = frame(layer, size: size, env: env)
+            fillAndStroke(starPath(in: rect, points: max(3, layer.points ?? 5), innerRatio: layer.innerRatio ?? 0.5), layer: layer, in: ctx, env: env)
+
         case "line":
             strokeLines({ path in
                 path.move(to: CGPoint(x: len(layer.x1, axis: size.width, 0), y: len(layer.y1, axis: size.height, 0)))
@@ -316,10 +312,6 @@ public enum TemplateRenderer {
             guard !text.isEmpty else { return }
             drawText(text, layer: layer, in: ctx, rect: frame(layer, size: size, env: env), env: env)
 
-        case "symbol":
-            guard let name = layer.symbol else { return }
-            drawSymbol(name, in: ctx, rect: frame(layer, size: size, env: env), color: color(layer.color, env.palette.accent)!, outline: 0)
-
         case "image", "pdf":
             guard let src = layer.src, let url = env.assetURL(src) else { return }
             drawAsset(url, page: layer.page ?? 0, in: ctx, rect: frame(layer, size: size, env: env), fill: layer.style == "fill")
@@ -337,6 +329,24 @@ public enum TemplateRenderer {
         let w = layer.width?.resolve(axis: size.width, parameters: p) ?? (size.width - x)
         let h = layer.height?.resolve(axis: size.height, parameters: p) ?? (size.height - y)
         return CGRect(x: x, y: y, width: w, height: h)
+    }
+
+    /// A star (or, with `innerRatio` 1, a regular polygon) with its first point at the top.
+    public static func starPath(in rect: CGRect, points: Int, innerRatio: Double) -> CGPath {
+        let path = CGMutablePath()
+        let center = CGPoint(x: rect.midX, y: rect.midY)
+        let outer = min(rect.width, rect.height) / 2
+        let inner = outer * CGFloat(min(max(innerRatio, 0.05), 1))
+        let polygon = innerRatio >= 1
+        let count = polygon ? points : points * 2
+        for i in 0..<count {
+            let radius = (polygon || i % 2 == 0) ? outer : inner
+            let angle = -CGFloat.pi / 2 + CGFloat(i) * 2 * .pi / CGFloat(count)
+            let point = CGPoint(x: center.x + cos(angle) * radius, y: center.y + sin(angle) * radius)
+            if i == 0 { path.move(to: point) } else { path.addLine(to: point) }
+        }
+        path.closeSubpath()
+        return path
     }
 
     private static func fillAndStroke(_ path: CGPath, layer: Layer, in ctx: CGContext, env: RenderEnvironment) {
@@ -453,33 +463,7 @@ public enum TemplateRenderer {
         ctx.restoreGState()
     }
 
-    // MARK: Symbols and assets
-
-    static func drawSymbol(_ name: String, in ctx: CGContext, rect: CGRect, color: CGColor, outline: CGFloat) {
-        #if canImport(UIKit)
-        let config = UIImage.SymbolConfiguration(pointSize: max(rect.width, rect.height), weight: outline > 0 ? .black : .semibold)
-        guard let symbol = UIImage(systemName: name, withConfiguration: config) else { return }
-        let tinted = symbol.withTintColor(UIColor(cgColor: color), renderingMode: .alwaysOriginal)
-        let aspect = symbol.size.width / max(symbol.size.height, 1)
-        var target = rect
-        if aspect > rect.width / rect.height {
-            target.size.height = rect.width / aspect
-            target.origin.y = rect.midY - target.height / 2
-        } else {
-            target.size.width = rect.height * aspect
-            target.origin.x = rect.midX - target.width / 2
-        }
-        UIGraphicsPushContext(ctx)
-        if outline > 0 {
-            // A thick white silhouette behind the symbol reads as a die-cut sticker edge.
-            for angle in stride(from: 0.0, to: 2 * Double.pi, by: Double.pi / 8) {
-                tinted.draw(in: target.offsetBy(dx: CGFloat(cos(angle)) * outline, dy: CGFloat(sin(angle)) * outline))
-            }
-        }
-        tinted.draw(in: target)
-        UIGraphicsPopContext()
-        #endif
-    }
+    // MARK: Assets
 
     private final class AssetCache: @unchecked Sendable {
         let images = NSCache<NSURL, CGImage>()

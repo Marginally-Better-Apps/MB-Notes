@@ -10,8 +10,13 @@ import SwiftUI
 final class RecordingController {
     enum State: Equatable {
         case idle
+        /// Asking for the microphone and spinning up the engine; the button is disabled.
+        case starting
         case recording
+        case paused
         case processing(String)
+
+        var isCapturing: Bool { self == .recording || self == .paused }
     }
 
     let package: NotePackage
@@ -20,8 +25,11 @@ final class RecordingController {
     private(set) var state: State = .idle
     private(set) var elapsed: TimeInterval = 0
     private(set) var level: Float = 0
+    private(set) var levelHistory: [Float] = []
     private(set) var liveSegments: [Transcript.Segment] = []
     private(set) var volatileText = ""
+    /// Why there is no live transcript yet ("Downloading the speech model…"), or nil.
+    private(set) var transcriptionNotice: String?
     private(set) var transcripts: [UUID: Transcript] = [:]
 
     // Playback
@@ -37,8 +45,12 @@ final class RecordingController {
     }
 
     private var recorder: LiveRecorder?
-    private var recordingSummary: RecordingSummary?
+    private var summary: RecordingSummary?
+    private var pauseStartedAt: Date?
+    private var resumeAfterInterruption = false
     private var ticker: Timer?
+    private var updateTask: Task<Void, Never>?
+    private var eventTask: Task<Void, Never>?
     private var player: AVAudioPlayer?
     private var playTicker: Timer?
 
@@ -59,72 +71,178 @@ final class RecordingController {
 
     func start() async {
         guard state == .idle, let editor else { return }
+        state = .starting
         stopPlayback()
         let number = editor.manifest.recordings.count + 1
-        let summary = RecordingSummary(title: "Recording \(number)", startedAt: Date(), duration: 0)
-        guard let url = package.fileURL(summary.audioPath) else { return }
+        let id = UUID()
+        let audioFile = "recordings/\(id.uuidString).caf"
+        guard let url = package.fileURL(audioFile) else {
+            editor.errorMessage = "Couldn't create the recording file inside this note."
+            state = .idle
+            return
+        }
         let recorder = LiveRecorder(fileURL: url, locale: Locale(identifier: UserDefaults.standard.string(forKey: "transcriptionLocale") ?? Locale.current.identifier))
         do {
-            try await recorder.start(transcribe: UserDefaults.standard.object(forKey: "liveTranscription") as? Bool ?? true)
+            try await recorder.start()
         } catch {
             editor.errorMessage = error.localizedDescription
+            state = .idle
+            return
+        }
+        guard state == .starting else {
+            // Cancelled while starting (for example the note closed).
+            _ = await recorder.stop()
             return
         }
         self.recorder = recorder
-        recordingSummary = RecordingSummary(id: summary.id, title: summary.title, startedAt: recorder.startedAt, duration: 0)
+        var summary = RecordingSummary(id: id, title: "Recording \(number)", startedAt: recorder.startedAt, duration: 0, audioFile: audioFile, inProgress: true)
+        // Listed in the note right away, so a crash mid-lecture leaves a recoverable recording.
+        editor.manifest.recordings.append(summary)
+        editor.save()
+        summary.duration = 0
+        self.summary = summary
         liveSegments = []
         volatileText = ""
+        transcriptionNotice = nil
         elapsed = 0
+        levelHistory = []
         state = .recording
-        ticker = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                guard let self, let recorder = self.recorder else { return }
-                self.elapsed = Date().timeIntervalSince(recorder.startedAt)
-                self.level = recorder.level
-            }
+
+        let timer = Timer(timeInterval: 0.1, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.tickRecording() }
         }
-        Task {
+        RunLoop.main.add(timer, forMode: .common)
+        ticker = timer
+
+        updateTask = Task { [weak self] in
             for await update in recorder.updates {
-                liveSegments.append(contentsOf: update.finalized)
-                volatileText = update.volatileText
+                guard let self else { return }
+                self.liveSegments.append(contentsOf: update.finalized)
+                self.volatileText = update.volatileText
             }
         }
+        eventTask = Task { [weak self] in
+            for await event in recorder.events {
+                guard let self else { return }
+                self.handle(event)
+            }
+        }
+        if UserDefaults.standard.object(forKey: "liveTranscription") as? Bool ?? true {
+            transcriptionNotice = "Starting live transcript…"
+            Task { await recorder.startTranscription() }
+        }
+    }
+
+    private func tickRecording() {
+        guard let recorder, let summary, state.isCapturing else { return }
+        if state == .recording {
+            elapsed = summary.audioTime(for: Date())
+        }
+        level = recorder.level
+        levelHistory = recorder.levelHistory
+    }
+
+    private func handle(_ event: LiveRecorder.Event) {
+        switch event {
+        case .interrupted:
+            if state == .recording {
+                resumeAfterInterruption = true
+                pause()
+            }
+        case .interruptionEnded(let shouldResume):
+            if shouldResume, resumeAfterInterruption { resume() }
+            resumeAfterInterruption = false
+        case .transcription(let ready, let message):
+            transcriptionNotice = ready ? nil : message
+        }
+    }
+
+    func pause() {
+        guard state == .recording, let recorder else { return }
+        recorder.pause()
+        pauseStartedAt = Date()
+        state = .paused
+    }
+
+    func resume() {
+        guard state == .paused, let recorder, let pauseStartedAt, var summary else { return }
+        do {
+            try recorder.resume()
+        } catch {
+            editor?.errorMessage = error.localizedDescription
+            return
+        }
+        let start = pauseStartedAt.timeIntervalSince(summary.startedAt)
+        summary.pauses.append(Transcript.Span(start: start, end: Date().timeIntervalSince(summary.startedAt)))
+        self.summary = summary
+        self.pauseStartedAt = nil
+        state = .recording
+    }
+
+    func togglePause() {
+        state == .paused ? resume() : pause()
     }
 
     func stop() async {
-        guard state == .recording, let recorder, var summary = recordingSummary, let editor else { return }
+        guard state.isCapturing, let recorder, var summary, let editor else { return }
+        if state == .paused { resume() }
         ticker?.invalidate()
         state = .processing("Finishing transcript…")
         let duration = await recorder.stop()
-        // Let the update loop drain the last finalized results.
-        try? await Task.sleep(for: .milliseconds(200))
+        await updateTask?.value
+        await eventTask?.value
         summary.duration = duration
+        summary.inProgress = false
         var transcript = Transcript(recordingID: summary.id, startedAt: summary.startedAt, duration: duration, locale: recorder.locale.identifier, engine: "apple.speech")
         transcript.segments = liveSegments
-        editor.manifest.recordings.append(summary)
+        if let index = editor.manifest.recordings.firstIndex(where: { $0.id == summary.id }) {
+            editor.manifest.recordings[index] = summary
+        } else {
+            editor.manifest.recordings.append(summary)
+        }
         editor.save()
         save(transcript, for: summary)
         self.recorder = nil
-        recordingSummary = nil
+        self.summary = nil
         volatileText = ""
+        level = 0
         await process(summary)
     }
 
-    /// Runs on-device post-processing that the user has enabled.
+    /// Finishes a recording that was running when the app was killed.
+    static func recover(_ summary: RecordingSummary, in package: NotePackage) -> RecordingSummary? {
+        guard summary.inProgress, let url = package.fileURL(summary.audioPath), let file = try? AVAudioFile(forReading: url) else { return nil }
+        var fixed = summary
+        fixed.duration = Double(file.length) / file.fileFormat.sampleRate
+        fixed.inProgress = false
+        return fixed
+    }
+
+    /// Runs on-device post-processing for the steps the user has enabled with models that are on.
     func process(_ summary: RecordingSummary) async {
         guard let transcript = transcript(for: summary), let audio = package.fileURL(summary.audioPath), let enhanced = package.fileURL(summary.enhancedAudioPath) else {
             state = .idle
             return
         }
         let defaults = UserDefaults.standard
+        let models = ModelManager.shared
         var steps: RecordingProcessor.Steps = []
-        if defaults.object(forKey: "process.retranscribe") as? Bool ?? true { steps.insert(.retranscribe) }
-        if defaults.object(forKey: "process.speakers") as? Bool ?? true { steps.insert(.speakers) }
-        if defaults.object(forKey: "process.fillers") as? Bool ?? true { steps.insert(.fillers) }
-        if defaults.object(forKey: "process.clean") as? Bool ?? false { steps.insert(.cleanAudio) }
+        if defaults.object(forKey: "process.retranscribe") as? Bool ?? true, models.isUsable(.voz) { steps.insert(.retranscribe) }
+        if defaults.object(forKey: "process.speakers") as? Bool ?? true, models.isUsable(.diarizer) { steps.insert(.speakers) }
+        if defaults.object(forKey: "process.fillers") as? Bool ?? true, models.isUsable(.uhm) { steps.insert(.fillers) }
+        if defaults.object(forKey: "process.clean") as? Bool ?? false, models.isEnabled(.clear) {
+            models.ensureSmallModel(.clear)
+            if models.isUsable(.clear) { steps.insert(.cleanAudio) }
+        }
+        guard !steps.isEmpty else {
+            state = .idle
+            return
+        }
         state = .processing("Improving transcript…")
         let processed = await RecordingProcessor.process(audioURL: audio, enhancedURL: enhanced, transcript: transcript, steps: steps) { message in
-            Task { @MainActor in self.state = .processing(message) }
+            Task { @MainActor [weak self] in
+                if case .processing = self?.state { self?.state = .processing(message) }
+            }
         }
         save(processed, for: summary)
 
@@ -139,7 +257,11 @@ final class RecordingController {
 
     func save(_ transcript: Transcript, for summary: RecordingSummary) {
         transcripts[summary.id] = transcript
-        try? package.writeTranscript(transcript, for: summary)
+        do {
+            try package.writeTranscript(transcript, for: summary)
+        } catch {
+            editor?.errorMessage = "Couldn't save the transcript: \(error.localizedDescription)"
+        }
     }
 
     func rename(_ recording: RecordingSummary, to title: String) {
@@ -175,6 +297,13 @@ final class RecordingController {
         save(transcript, for: recording)
     }
 
+    /// Stops anything in flight when the note closes.
+    func shutDown() {
+        stopPlayback()
+        if state == .starting { state = .idle }
+        if state.isCapturing { Task { await stop() } }
+    }
+
     // MARK: Playback
 
     func play(_ recording: RecordingSummary, from time: TimeInterval? = nil) {
@@ -199,20 +328,22 @@ final class RecordingController {
         player?.play()
         isPlaying = true
         playTicker?.invalidate()
-        playTicker = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: 0.2, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.tick() }
         }
+        RunLoop.main.add(timer, forMode: .common)
+        playTicker = timer
         updateReplay()
     }
 
-    func pause() {
+    func pausePlayback() {
         player?.pause()
         isPlaying = false
         playTicker?.invalidate()
     }
 
     func togglePlay(_ recording: RecordingSummary) {
-        if playingID == recording.id, isPlaying { pause() } else { play(recording) }
+        if playingID == recording.id, isPlaying { pausePlayback() } else { play(recording) }
     }
 
     func seek(to time: TimeInterval) {
@@ -228,8 +359,8 @@ final class RecordingController {
 
     /// Jumps to the moment a stroke was written, a little before it.
     func seek(toStrokeDate date: Date) {
-        guard let recording = recordings.first(where: { date >= $0.startedAt && date <= $0.startedAt.addingTimeInterval($0.duration + 5) }) else { return }
-        play(recording, from: date.timeIntervalSince(recording.startedAt) - 2)
+        guard let recording = recordings.first(where: { date >= $0.startedAt && date <= $0.wallClock(forAudioTime: $0.duration).addingTimeInterval(5) }) else { return }
+        play(recording, from: recording.audioTime(for: date) - 2)
     }
 
     func stopPlayback() {
@@ -239,7 +370,7 @@ final class RecordingController {
         isPlaying = false
         playingID = nil
         playbackTime = 0
-        editor?.canvas?.showReplay(until: nil, recordingStart: .distantPast, recordingEnd: .distantPast)
+        editor?.canvas?.showReplay(until: nil, recording: nil)
     }
 
     private func tick() {
@@ -259,9 +390,9 @@ final class RecordingController {
     private func updateReplay() {
         guard let editor, let canvas = editor.canvas else { return }
         guard replayInk, let id = playingID, let recording = recordings.first(where: { $0.id == id }) else {
-            canvas.showReplay(until: nil, recordingStart: .distantPast, recordingEnd: .distantPast)
+            canvas.showReplay(until: nil, recording: nil)
             return
         }
-        canvas.showReplay(until: recording.startedAt.addingTimeInterval(playbackTime), recordingStart: recording.startedAt, recordingEnd: recording.startedAt.addingTimeInterval(recording.duration))
+        canvas.showReplay(until: recording.wallClock(forAudioTime: playbackTime), recording: recording)
     }
 }

@@ -29,20 +29,18 @@ final class TiledBackgroundView: UIView {
     }
 }
 
-/// One page: shadow, tiled background, and interactive elements.
+/// One page: a hairline edge, tiled background, and interactive elements.
 final class PageView: UIView {
     var page: PageSpec
     private var renderer: PageRenderer
     private let background: TiledBackgroundView
     private let elementsLayer = UIView()
     private weak var controller: NoteCanvasController?
-    private var elementViews: [UUID: ElementView] = [:]
+    private(set) var elementViews: [UUID: ElementView] = [:]
+    private var mode = EditorMode.view
 
     var elementsInteractive = false {
-        didSet {
-            elementsLayer.isUserInteractionEnabled = elementsInteractive
-            elementViews.values.forEach { $0.setInteractive(elementsInteractive, tool: controller?.model.tool ?? .draw) }
-        }
+        didSet { updateInteractivity() }
     }
 
     init(page: PageSpec, renderer: PageRenderer, controller: NoteCanvasController) {
@@ -52,9 +50,9 @@ final class PageView: UIView {
         background = TiledBackgroundView(page: page, renderer: renderer)
         super.init(frame: CGRect(x: 0, y: 0, width: page.size.width, height: page.size.height))
         layer.shadowColor = UIColor.black.cgColor
-        layer.shadowOpacity = 0.12
-        layer.shadowRadius = 10
-        layer.shadowOffset = CGSize(width: 0, height: 3)
+        layer.shadowOpacity = 0.08
+        layer.shadowRadius = 4
+        layer.shadowOffset = CGSize(width: 0, height: 1)
         layer.shadowPath = UIBezierPath(rect: bounds).cgPath
         background.frame = bounds
         background.autoresizingMask = [.flexibleWidth, .flexibleHeight]
@@ -78,6 +76,17 @@ final class PageView: UIView {
         reloadElements()
     }
 
+    func setMode(_ mode: EditorMode, interactive: Bool) {
+        self.mode = mode
+        elementsInteractive = interactive
+    }
+
+    private func updateInteractivity() {
+        elementsLayer.isUserInteractionEnabled = elementsInteractive
+        elementViews.values.forEach { $0.setInteractive(elementsInteractive, mode: mode) }
+    }
+
+    /// Rebuilds element views to match the page, in the page's z-order.
     func reloadElements() {
         let ids = Set(page.elements.map(\.id))
         for (id, view) in elementViews where !ids.contains(id) {
@@ -86,7 +95,7 @@ final class PageView: UIView {
         }
         for element in page.elements {
             if let existing = elementViews[element.id] {
-                existing.element = element
+                if existing.element != element { existing.element = element }
                 elementsLayer.bringSubviewToFront(existing)
                 continue
             }
@@ -94,7 +103,7 @@ final class PageView: UIView {
             elementViews[element.id] = view
             elementsLayer.addSubview(view)
         }
-        elementViews.values.forEach { $0.setInteractive(elementsInteractive, tool: controller?.model.tool ?? .draw) }
+        updateInteractivity()
     }
 
     func beginEditing(_ id: UUID) {

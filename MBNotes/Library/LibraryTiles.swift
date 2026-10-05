@@ -1,69 +1,43 @@
 import NoteEngine
 import SwiftUI
 
-/// The classic folder silhouette: a tab on the top-left above a rounded body.
-struct FolderShape: Shape {
-    func path(in rect: CGRect) -> Path {
-        let r = rect.width * 0.08
-        let tabWidth = rect.width * 0.42
-        let tabHeight = rect.height * 0.12
-        var p = Path()
-        p.move(to: CGPoint(x: rect.minX, y: rect.minY + r))
-        p.addQuadCurve(to: CGPoint(x: rect.minX + r, y: rect.minY), control: CGPoint(x: rect.minX, y: rect.minY))
-        p.addLine(to: CGPoint(x: rect.minX + tabWidth - r, y: rect.minY))
-        p.addQuadCurve(to: CGPoint(x: rect.minX + tabWidth + r * 0.6, y: rect.minY + tabHeight), control: CGPoint(x: rect.minX + tabWidth, y: rect.minY))
-        p.addLine(to: CGPoint(x: rect.maxX - r, y: rect.minY + tabHeight))
-        p.addQuadCurve(to: CGPoint(x: rect.maxX, y: rect.minY + tabHeight + r), control: CGPoint(x: rect.maxX, y: rect.minY + tabHeight))
-        p.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY - r))
-        p.addQuadCurve(to: CGPoint(x: rect.maxX - r, y: rect.maxY), control: CGPoint(x: rect.maxX, y: rect.maxY))
-        p.addLine(to: CGPoint(x: rect.minX + r, y: rect.maxY))
-        p.addQuadCurve(to: CGPoint(x: rect.minX, y: rect.maxY - r), control: CGPoint(x: rect.minX, y: rect.maxY))
-        p.closeSubpath()
-        return p
-    }
-}
-
-/// A folder drawn in its color with its symbol and stickers.
-struct FolderArt: View {
+/// A flat, Files-style folder: a darker back with a tab, a lighter front body, and the
+/// folder's symbol embossed on the front. One tint, no gradients or shadows.
+struct FolderGlyph: View {
     let metadata: FolderMetadata
-    var catalog: PackCatalog
+    var showsSymbol = true
 
     var body: some View {
         GeometryReader { geo in
-            let color = Color(hex: metadata.color)
-            ZStack {
-                // Back sheet peeking out, like papers inside the folder.
-                RoundedRectangle(cornerRadius: geo.size.width * 0.06)
-                    .fill(.white.opacity(0.9))
-                    .frame(width: geo.size.width * 0.86, height: geo.size.height * 0.7)
-                    .rotationEffect(.degrees(-3))
-                    .offset(y: -geo.size.height * 0.08)
-                    .shadow(color: .black.opacity(0.08), radius: 2, y: 1)
-                FolderShape()
-                    .fill(LinearGradient(colors: [color.mix(with: .white, by: 0.18), color], startPoint: .top, endPoint: .bottom))
-                    .overlay(FolderShape().stroke(.white.opacity(0.35), lineWidth: 1))
-                    .overlay(alignment: .topLeading) {
-                        // Glassy highlight along the top edge.
-                        FolderShape()
-                            .fill(LinearGradient(colors: [.white.opacity(0.35), .clear], startPoint: .top, endPoint: .center))
-                    }
-                    .frame(height: geo.size.height * 0.82)
+            let w = geo.size.width
+            let h = geo.size.height
+            let tint = Color(hex: metadata.color)
+            let radius = w * 0.09
+            ZStack(alignment: .bottom) {
+                // Back panel with the tab.
+                UnevenRoundedRectangle(topLeadingRadius: radius, bottomLeadingRadius: radius, bottomTrailingRadius: radius, topTrailingRadius: radius)
+                    .fill(tint.mix(with: .black, by: 0.18))
+                    .frame(width: w, height: h * 0.9)
                     .frame(maxHeight: .infinity, alignment: .bottom)
-                    .shadow(color: color.opacity(0.35), radius: 8, y: 4)
-                Image(systemName: metadata.symbol)
-                    .font(.system(size: geo.size.width * 0.22, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .shadow(color: .black.opacity(0.15), radius: 2, y: 1)
-                    .offset(y: geo.size.height * 0.1)
-                ForEach(metadata.stickers) { placed in
-                    StickerView(ref: placed.sticker, catalog: catalog)
-                        .frame(width: geo.size.width * 0.3 * placed.scale, height: geo.size.width * 0.3 * placed.scale)
-                        .rotationEffect(.radians(placed.rotation))
-                        .position(x: placed.x * geo.size.width, y: placed.y * geo.size.height)
+                    .overlay(alignment: .topLeading) {
+                        UnevenRoundedRectangle(topLeadingRadius: radius, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: radius * 0.9)
+                            .fill(tint.mix(with: .black, by: 0.18))
+                            .frame(width: w * 0.42, height: h * 0.2)
+                    }
+                // Front body.
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
+                    .fill(tint)
+                    .frame(width: w, height: h * 0.74)
+                if showsSymbol, metadata.symbol != "folder.fill" {
+                    Image(systemName: metadata.symbol)
+                        .font(.system(size: w * 0.26, weight: .medium))
+                        .foregroundStyle(tint.mix(with: .black, by: 0.3))
+                        .frame(height: h * 0.74)
                 }
             }
+            .frame(width: w, height: h)
         }
-        .aspectRatio(1.15, contentMode: .fit)
+        .aspectRatio(1.25, contentMode: .fit)
     }
 }
 
@@ -86,65 +60,53 @@ struct StickerView: View {
 
 struct FolderTile: View {
     let item: LibraryEntry
-    @Environment(AppModel.self) private var app
+    var highlighted = false
 
     var body: some View {
-        VStack(spacing: 8) {
-            FolderArt(metadata: item.folder ?? FolderMetadata(color: "#8056F6", symbol: "folder.fill"), catalog: app.catalog)
+        VStack(spacing: 6) {
+            FolderGlyph(metadata: item.folder ?? FolderMetadata(color: "#6A45E0", symbol: "folder.fill"))
+                .padding(.horizontal, 10)
+                .scaleEffect(highlighted ? 1.06 : 1)
+                .animation(.snappy, value: highlighted)
             Text(item.name)
-                .font(.subheadline.weight(.semibold))
+                .font(.footnote)
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
-            Text(item.modifiedAt, format: .relative(presentation: .named))
+            Text(countLabel)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(item.name), folder, \(countLabel)")
+    }
+
+    private var countLabel: String {
+        let count = item.itemCount ?? 0
+        return count == 1 ? "1 item" : "\(count) items"
     }
 }
 
-struct NoteTile: View {
+/// A note's first page or cover, with a hairline border instead of a drop shadow.
+struct NoteThumbnail: View {
     let item: LibraryEntry
     @Environment(AppModel.self) private var app
     @State private var image: UIImage?
 
     var body: some View {
-        VStack(spacing: 8) {
-            ZStack {
-                if let image {
-                    Image(uiImage: image)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                } else {
-                    Rectangle().fill(.quaternary)
-                }
+        ZStack {
+            if let image {
+                Image(uiImage: image).resizable().aspectRatio(contentMode: .fill)
+            } else {
+                Rectangle().fill(.quaternary)
             }
-            .aspectRatio(0.75, contentMode: .fit)
-            .clipShape(.rect(topLeadingRadius: isNotebook ? 4 : 10, bottomLeadingRadius: isNotebook ? 4 : 10, bottomTrailingRadius: 10, topTrailingRadius: 10))
-            .overlay(alignment: .leading) {
-                if isNotebook {
-                    // Binding shadow so notebooks read as books.
-                    LinearGradient(colors: [.black.opacity(0.22), .clear], startPoint: .leading, endPoint: .trailing)
-                        .frame(width: 10)
-                        .clipShape(.rect(topLeadingRadius: 4, bottomLeadingRadius: 4))
-                }
+        }
+        .aspectRatio(0.75, contentMode: .fit)
+        .clipShape(shape)
+        .overlay(shape.strokeBorder(.separator, lineWidth: 0.5))
+        .overlay(alignment: .leading) {
+            if item.manifest?.kind == .notebook {
+                Rectangle().fill(.black.opacity(0.1)).frame(width: 1).padding(.leading, 6)
             }
-            .overlay(alignment: .bottomTrailing) {
-                if let count = item.manifest?.recordings.count, count > 0 {
-                    Image(systemName: "waveform")
-                        .font(.caption.weight(.bold))
-                        .padding(6)
-                        .glassEffect(.regular.tint(Brand.pink.opacity(0.4)), in: .circle)
-                        .padding(6)
-                }
-            }
-            .shadow(color: .black.opacity(0.14), radius: 6, y: 3)
-            Text(item.name)
-                .font(.subheadline.weight(.semibold))
-                .lineLimit(2)
-                .multilineTextAlignment(.center)
-            Text(item.modifiedAt, format: .relative(presentation: .named))
-                .font(.caption2)
-                .foregroundStyle(.secondary)
         }
         .task(id: item.modifiedAt) {
             image = ThumbnailCache.shared.cached(for: item)
@@ -152,5 +114,126 @@ struct NoteTile: View {
         }
     }
 
-    private var isNotebook: Bool { item.manifest?.kind == .notebook }
+    private var shape: UnevenRoundedRectangle {
+        let leading: CGFloat = item.manifest?.kind == .notebook ? 3 : Radius.tile
+        return UnevenRoundedRectangle(topLeadingRadius: leading, bottomLeadingRadius: leading, bottomTrailingRadius: Radius.tile, topTrailingRadius: Radius.tile, style: .continuous)
+    }
+}
+
+struct NoteTile: View {
+    let item: LibraryEntry
+    var selected = false
+
+    var body: some View {
+        VStack(spacing: 6) {
+            NoteThumbnail(item: item)
+                .overlay(alignment: .topTrailing) {
+                    if selected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.title3)
+                            .symbolRenderingMode(.palette)
+                            .foregroundStyle(.white, .tint)
+                            .padding(6)
+                    }
+                }
+                .overlay {
+                    if selected {
+                        RoundedRectangle(cornerRadius: Radius.tile + 3, style: .continuous).stroke(.tint, lineWidth: 2.5).padding(-3)
+                    }
+                }
+            Text(item.name)
+                .font(.footnote)
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+            HStack(spacing: 4) {
+                if item.isPinned { Image(systemName: "pin.fill").font(.system(size: 8)) }
+                Text(item.modifiedAt.libraryDescription)
+                badges
+            }
+            .font(.caption2)
+            .foregroundStyle(.secondary)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(item.accessibilityDescription)
+    }
+
+    @ViewBuilder private var badges: some View {
+        if let manifest = item.manifest {
+            if !manifest.recordings.isEmpty { Image(systemName: "waveform") }
+            if manifest.kind == .document { Image(systemName: "doc.richtext") }
+        }
+    }
+}
+
+/// A note in list layout: thumbnail, title, date and first line.
+struct NoteRow: View {
+    let item: LibraryEntry
+
+    var body: some View {
+        HStack(spacing: 12) {
+            NoteThumbnail(item: item)
+                .frame(width: 44)
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 4) {
+                    if item.isPinned { Image(systemName: "pin.fill").font(.caption2).foregroundStyle(.secondary) }
+                    Text(item.name).font(.body).lineLimit(1)
+                }
+                HStack(spacing: 6) {
+                    Text(item.modifiedAt.libraryDescription)
+                    if let preview = item.previewLine { Text(preview).lineLimit(1) }
+                    if let manifest = item.manifest, !manifest.recordings.isEmpty { Image(systemName: "waveform") }
+                }
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(item.accessibilityDescription)
+    }
+}
+
+struct FolderRow: View {
+    let item: LibraryEntry
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "folder.fill")
+                .font(.title2)
+                .foregroundStyle(Color(hex: item.folder?.color ?? "#6A45E0"))
+                .frame(width: 44)
+            Text(item.name).lineLimit(1)
+            Spacer()
+            Text("\(item.itemCount ?? 0)").foregroundStyle(.secondary)
+        }
+    }
+}
+
+extension LibraryEntry {
+    /// The first typed line, for list previews.
+    var previewLine: String? {
+        guard let manifest else { return nil }
+        for page in manifest.pages {
+            for element in page.elements {
+                if let text = element.text?.string.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty {
+                    return text.components(separatedBy: .newlines).first
+                }
+            }
+        }
+        return nil
+    }
+
+    var accessibilityDescription: String {
+        guard let manifest else { return name }
+        var parts = [name]
+        switch manifest.kind {
+        case .notebook: parts.append("notebook")
+        case .document: parts.append("imported document")
+        case .note: parts.append("note")
+        }
+        parts.append("\(manifest.pages.count) \(manifest.pages.count == 1 ? "page" : "pages")")
+        parts.append("edited \(modifiedAt.libraryDescription)")
+        if !manifest.recordings.isEmpty { parts.append("has recording") }
+        if isPinned { parts.append("pinned") }
+        return parts.joined(separator: ", ")
+    }
 }

@@ -14,9 +14,22 @@ import UIKit
         #expect(pack.papers.contains { $0.id == "lined" })
     }
 
-    @Test func everyAlternateIconHasAPreview() {
-        for theme in AppIconTheme.allCases {
+    @Test func everyThemeHasAnIconPreview() {
+        for theme in AppTheme.allCases {
             #expect(UIImage(named: theme.previewImage) != nil, "missing preview for \(theme.rawValue)")
+        }
+    }
+
+    @Test func themeAccentsAreReadableOnWhite() {
+        // WCAG AA for normal text is 4.5:1; every light accent should clear it comfortably.
+        func luminance(_ hex: String) -> Double {
+            let c = ColorSpec.components(hex)!
+            func channel(_ v: Double) -> Double { v <= 0.03928 ? v / 12.92 : pow((v + 0.055) / 1.055, 2.4) }
+            return 0.2126 * channel(c.0) + 0.7152 * channel(c.1) + 0.0722 * channel(c.2)
+        }
+        for theme in AppTheme.allCases {
+            let ratio = 1.05 / (luminance(theme.light.accent) + 0.05)
+            #expect(ratio >= 4.5, "\(theme.name) accent contrast is \(ratio)")
         }
     }
 
@@ -25,13 +38,13 @@ import UIKit
         let registry = PackRegistry(builtInDirectory: Bundle.main.url(forResource: "Packs", withExtension: nil), userDirectory: root)
         let catalog = registry.reload()
         let manifest = NoteFactory.notebook(
-            title: "Chem", cover: ContentRef(packID: CorePack.id, itemID: "classic"), accentColor: "#123456",
+            title: "Chem", cover: ContentRef(packID: CorePack.id, itemID: "cloth"), accentColor: "#123456",
             paper: PaperRef(template: ContentRef(packID: CorePack.id, itemID: "dots")),
             titlePage: ContentRef(packID: CorePack.id, itemID: "title-classic"), size: .letter, catalog: catalog
         )
         #expect(manifest.pages.count == 2)
         #expect(manifest.pages[0].paper.template.itemID == "title-classic")
-        #expect(manifest.embedded.covers["\(CorePack.id)/classic"] != nil)
+        #expect(manifest.embedded.covers["\(CorePack.id)/cloth"] != nil)
     }
 }
 
@@ -44,7 +57,7 @@ private final class AppModelProbe {}
         let library = LibraryStore(root: root)
         let registry = PackRegistry(builtInDirectory: Bundle.main.url(forResource: "Packs", withExtension: nil), userDirectory: root.appendingPathComponent("packs"))
         let catalog = registry.reload()
-        var manifest = NoteFactory.note(title: "Cells", accentColor: "#F76CA0", paper: PaperRef(template: ContentRef(packID: CorePack.id, itemID: "lined")), size: .letter, catalog: catalog)
+        var manifest = NoteFactory.note(title: "Cells", accentColor: "#6A45E0", paper: PaperRef(template: ContentRef(packID: CorePack.id, itemID: "lined")), size: .letter, catalog: catalog)
         manifest.pages[0].elements = [.text("Typed mitochondria", frame: Rect(x: 72, y: 72, width: 300, height: 40))]
         let package = try library.createNote(manifest, in: root)
 

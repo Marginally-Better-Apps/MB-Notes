@@ -17,7 +17,7 @@ struct AIPanel: View {
         VStack(spacing: 0) {
             if !ai.isConfigured {
                 ContentUnavailableView {
-                    Label("AI is off", systemImage: "sparkles")
+                    Label("AI Is Off", systemImage: "sparkles")
                 } description: {
                     Text("Choose Apple Intelligence, a small on-device model, or your own API key in Settings › AI. MB Notes never sends your notes anywhere until you do.")
                 }
@@ -27,7 +27,7 @@ struct AIPanel: View {
                         VStack(alignment: .leading, spacing: 14) {
                             HStack {
                                 Label(ai.provider?.displayName ?? "", systemImage: ai.backend == .remote ? "network" : "lock.shield")
-                                    .font(.caption.weight(.semibold))
+                                    .font(.caption)
                                     .foregroundStyle(.secondary)
                                 Spacer()
                                 if !history.isEmpty {
@@ -47,7 +47,7 @@ struct AIPanel: View {
                                 ProgressView().frame(maxWidth: .infinity)
                             }
                             if let error {
-                                Text(error).font(.caption).foregroundStyle(.red)
+                                Label(error, systemImage: "exclamationmark.triangle").font(.caption).foregroundStyle(.secondary)
                             }
                             Color.clear.frame(height: 1).id("end")
                         }
@@ -61,18 +61,22 @@ struct AIPanel: View {
     }
 
     private var suggestions: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Ask about this note").font(.headline)
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Ask About This Note").font(.headline).padding(.bottom, 4)
             ForEach(["Summarize this note", "Make flashcards from this note", "What should I review before the exam?", "Explain the hardest idea simply"], id: \.self) { prompt in
                 Button {
                     if prompt == "Summarize this note" { summarize() } else { send(prompt) }
                 } label: {
-                    Text(prompt)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(12)
-                        .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 14))
+                    HStack {
+                        Text(prompt)
+                        Spacer()
+                        Image(systemName: "arrow.up.circle").foregroundStyle(.tint)
+                    }
+                    .padding(.vertical, 10)
+                    .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
+                Divider()
             }
         }
     }
@@ -83,14 +87,17 @@ struct AIPanel: View {
                 .lineLimit(1...4)
                 .onSubmit { send(question) }
             if isWorking {
-                Button { task?.cancel() } label: { Image(systemName: "stop.fill") }
+                Button { task?.cancel() } label: { Image(systemName: "stop.circle.fill").font(.title2) }
+                    .accessibilityLabel("Stop")
             } else {
-                Button { send(question) } label: { Image(systemName: "arrow.up").font(.body.weight(.bold)) }
+                Button { send(question) } label: { Image(systemName: "arrow.up.circle.fill").font(.title2) }
                     .disabled(question.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .accessibilityLabel("Send")
             }
         }
-        .padding(12)
-        .glassEffect(.regular, in: .rect(cornerRadius: 20))
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .glassEffect(.regular, in: .rect(cornerRadius: Radius.panel))
         .padding()
     }
 
@@ -102,14 +109,16 @@ struct AIPanel: View {
                 Button {
                     addToNote(text)
                 } label: {
-                    Label("Add to note", systemImage: "plus.rectangle.portrait").font(.caption.weight(.semibold))
+                    Label("Add to Note", systemImage: "plus.rectangle.portrait").font(.caption.weight(.medium))
                 }
-                .buttonStyle(.glass)
+                .buttonStyle(.bordered)
+                .buttonBorderShape(.capsule)
+                .controlSize(.small)
             }
         }
-        .padding(12)
+        .padding(mine ? 12 : 0)
         .frame(maxWidth: .infinity, alignment: mine ? .trailing : .leading)
-        .background(mine ? Brand.pink.opacity(0.15) : Color.secondary.opacity(0.08), in: .rect(cornerRadius: 16))
+        .background(mine ? AnyShapeStyle(.fill.tertiary) : AnyShapeStyle(.clear), in: .rect(cornerRadius: 18, style: .continuous))
     }
 
     private func summarize() {
@@ -161,6 +170,8 @@ struct AIPanel: View {
         model.addPage(after: model.pageCount - 1, paper: lined)
         let index = model.pageCount - 1
         let size = model.manifest.pages[index].size
-        model.addElement(.text(plain, frame: Rect(x: 72, y: 72, width: size.width - 120, height: size.height - 120), style: TextContent(fontSize: 14, color: "#1C1B2E")), toPage: index)
+        var style = model.textStyle
+        style.fontSize = 14
+        model.addElement(.text(plain, frame: Rect(x: 72, y: 72, width: size.width - 120, height: size.height - 120), style: style), toPage: index)
     }
 }

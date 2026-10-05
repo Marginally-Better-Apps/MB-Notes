@@ -5,7 +5,7 @@ import SwiftUI
 struct PaperPreview: View {
     let template: PaperTemplate
     var packID: String
-    var accent: String = "#F76CA0"
+    var accent: String = "#6A45E0"
     var title: String = "Notebook"
     var parameters: [String: Double] = [:]
     @Environment(AppModel.self) private var app
@@ -25,8 +25,8 @@ struct PaperPreview: View {
             }
         }
         .aspectRatio(612 / 792, contentMode: .fit)
-        .clipShape(.rect(cornerRadius: 6))
-        .shadow(color: .black.opacity(0.12), radius: 3, y: 1)
+        .clipShape(.rect(cornerRadius: Radius.thumb))
+        .overlay(RoundedRectangle(cornerRadius: Radius.thumb).strokeBorder(.separator, lineWidth: 0.5))
     }
 }
 
@@ -36,7 +36,6 @@ struct CoverPreview: View {
     var accent: String
     var title: String
     var subtitle: String = ""
-    var stickers: [PlacedSticker] = []
     @Environment(AppModel.self) private var app
 
     var body: some View {
@@ -50,158 +49,189 @@ struct CoverPreview: View {
                 TemplateRenderer.drawCover(design, in: cg, rect: CGRect(origin: .zero, size: size), environment: env)
             }
         }
-        .overlay {
-            GeometryReader { geo in
-                ForEach(stickers) { placed in
-                    StickerView(ref: placed.sticker, catalog: app.catalog)
-                        .frame(width: geo.size.width * 0.28 * placed.scale, height: geo.size.width * 0.28 * placed.scale)
-                        .rotationEffect(.radians(placed.rotation))
-                        .position(x: placed.x * geo.size.width, y: placed.y * geo.size.height)
-                }
-            }
-        }
         .aspectRatio(0.75, contentMode: .fit)
-        .clipShape(.rect(topLeadingRadius: 4, bottomLeadingRadius: 4, bottomTrailingRadius: 12, topTrailingRadius: 12))
-        .shadow(color: .black.opacity(0.18), radius: 5, y: 3)
+        .clipShape(.rect(topLeadingRadius: 3, bottomLeadingRadius: 3, bottomTrailingRadius: Radius.tile, topTrailingRadius: Radius.tile))
+        .overlay(UnevenRoundedRectangle(topLeadingRadius: 3, bottomLeadingRadius: 3, bottomTrailingRadius: Radius.tile, topTrailingRadius: Radius.tile).strokeBorder(.separator, lineWidth: 0.5))
     }
 }
 
-/// A swatch row: palette colors plus a custom color well.
-struct ColorRow: View {
+/// A grid of curated colors with names, plus a custom color well.
+struct ColorGrid: View {
     @Binding var hex: String
     @Environment(AppModel.self) private var app
+    @State private var showMore = false
+
+    private static let names = ["Violet", "Indigo", "Blue", "Teal", "Green", "Amber", "Orange", "Red", "Pink", "Purple", "Brown", "Gray"]
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 10) {
-                ForEach(colors, id: \.self) { color in
-                    Circle()
-                        .fill(Color(hex: color))
-                        .frame(width: 32, height: 32)
-                        .overlay(Circle().stroke(.white, lineWidth: hex == color ? 3 : 0))
-                        .overlay(Circle().stroke(Color(hex: color), lineWidth: hex == color ? 2 : 0).padding(-3))
-                        .onTapGesture { hex = color }
-                        .accessibilityLabel(Text(color))
+        VStack(alignment: .leading, spacing: 12) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 40), spacing: 12)], spacing: 12) {
+                ForEach(Array(AppTheme.itemColors.enumerated()), id: \.element) { index, color in
+                    swatch(color, name: Self.names[safe: index] ?? color)
                 }
                 ColorPicker("Custom", selection: Binding(get: { Color(hex: hex) }, set: { hex = $0.hexString }), supportsOpacity: false)
                     .labelsHidden()
+                    .frame(width: 36, height: 36)
             }
-            .padding(.vertical, 6)
-            .padding(.horizontal, 2)
+            if showMore {
+                ForEach(app.catalog.allPalettes.filter { $0.id != "themes" }) { palette in
+                    Text(palette.name).font(.footnote).foregroundStyle(.secondary)
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 40), spacing: 12)], spacing: 12) {
+                        ForEach(palette.colors, id: \.self) { swatch($0, name: $0) }
+                    }
+                }
+            } else {
+                Button("More Colors") { withAnimation { showMore = true } }.font(.footnote)
+            }
         }
+        .sensoryFeedback(.selection, trigger: hex)
     }
 
-    private var colors: [String] {
-        var seen = Set<String>()
-        return app.catalog.allPalettes.flatMap(\.colors).filter { seen.insert($0.uppercased()).inserted }
+    private func swatch(_ color: String, name: String) -> some View {
+        let selected = hex.caseInsensitiveCompare(color) == .orderedSame
+        return Button { hex = color } label: {
+            Circle()
+                .fill(Color(hex: color))
+                .frame(width: 36, height: 36)
+                .overlay {
+                    if selected { Image(systemName: "checkmark").font(.body.weight(.bold)).foregroundStyle(.white) }
+                }
+        }
+        .buttonStyle(.plain)
+        .hoverEffect(.highlight)
+        .accessibilityLabel(name)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
 
-struct NewNoteSheet: View {
-    enum Mode { case notebook, note }
-
-    let mode: Mode
+/// Create a notebook: name, cover, color, first page, and paper.
+struct NotebookSheet: View {
     let folder: URL
     @Environment(AppModel.self) private var app
+    @Environment(SceneModel.self) private var scene
     @Environment(\.dismiss) private var dismiss
+    @FocusState private var titleFocused: Bool
     @State private var title = ""
-    @State private var accent = "#F76CA0"
-    @State private var cover = ContentRef(packID: CorePack.id, itemID: "classic")
+    @State private var accent = AppTheme.current.accentHex
+    @State private var customizedColor = false
+    @State private var cover = ContentRef(packID: CorePack.id, itemID: "cloth")
     @State private var paper = ContentRef(packID: CorePack.id, itemID: "lined")
-    @State private var titlePage: ContentRef? = ContentRef(packID: CorePack.id, itemID: "title-classic")
+    @State private var titlePage: ContentRef? = ContentRef(packID: CorePack.id, itemID: "title-minimal")
     @State private var sizeName = UserDefaults.standard.string(forKey: "pageSize") ?? "letter"
     @State private var landscape = false
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    TextField(mode == .notebook ? "Notebook name" : "Note name", text: $title)
-                        .font(.title2.weight(.semibold))
-                        .padding(14)
-                        .glassEffect(.regular, in: .rect(cornerRadius: 16))
+            Form {
+                Section {
+                    HStack(alignment: .top, spacing: 16) {
+                        if let design = app.catalog.cover(cover) {
+                            CoverPreview(design: design, packID: cover.packID, accent: accent, title: displayTitle)
+                                .frame(width: 96)
+                        }
+                        VStack(alignment: .leading, spacing: 8) {
+                            TextField("Name", text: $title)
+                                .font(.title3)
+                                .focused($titleFocused)
+                                .submitLabel(.done)
+                                .onSubmit(create)
+                            Text(folderName).font(.footnote).foregroundStyle(.secondary)
+                        }
+                        .padding(.top, 4)
+                    }
+                    .padding(.vertical, 4)
+                }
 
-                    section("Color") { ColorRow(hex: $accent) }
-
-                    if mode == .notebook {
-                        section("Cover") {
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 14) {
-                                    ForEach(app.catalog.allCovers, id: \.ref) { entry in
+                Section("Cover") {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 12) {
+                            ForEach(app.catalog.allCovers, id: \.ref) { entry in
+                                Button {
+                                    cover = entry.ref
+                                    if !customizedColor, let color = entry.cover.defaultColor { accent = color }
+                                } label: {
+                                    VStack(spacing: 6) {
                                         CoverPreview(design: entry.cover, packID: entry.ref.packID, accent: accent, title: displayTitle)
-                                            .frame(width: 110)
+                                            .frame(width: 72)
                                             .overlay(selectionRing(entry.ref == cover))
-                                            .onTapGesture {
-                                                cover = entry.ref
-                                                if let color = entry.cover.defaultColor { accent = color }
-                                            }
+                                        Text(entry.cover.name).font(.caption).foregroundStyle(entry.ref == cover ? .primary : .secondary)
                                     }
                                 }
-                                .padding(6)
+                                .buttonStyle(.plain)
+                                .accessibilityAddTraits(entry.ref == cover ? .isSelected : [])
                             }
                         }
-                        section("First page") {
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 14) {
-                                    VStack {
-                                        RoundedRectangle(cornerRadius: 6)
-                                            .fill(.background)
-                                            .aspectRatio(612 / 792, contentMode: .fit)
-                                            .overlay(Image(systemName: "nosign").foregroundStyle(.secondary))
-                                            .overlay(selectionRing(titlePage == nil))
-                                        Text("None").font(.caption)
-                                    }
-                                    .frame(width: 96)
-                                    .onTapGesture { titlePage = nil }
-                                    ForEach(titlePapers, id: \.ref) { entry in
-                                        VStack {
-                                            PaperPreview(template: entry.paper, packID: entry.ref.packID, accent: accent, title: displayTitle)
-                                                .overlay(selectionRing(entry.ref == titlePage))
-                                            Text(entry.paper.name).font(.caption).lineLimit(1)
-                                        }
-                                        .frame(width: 96)
-                                        .onTapGesture { titlePage = entry.ref }
-                                    }
-                                }
-                                .padding(6)
-                            }
-                        }
-                    }
-
-                    section("Paper") {
-                        PaperGrid(selection: $paper, accent: accent)
-                    }
-
-                    section("Page size") {
-                        HStack {
-                            Picker("Size", selection: $sizeName) {
-                                Text("Letter").tag("letter")
-                                Text("A4").tag("a4")
-                                Text("A5").tag("a5")
-                            }
-                            .pickerStyle(.segmented)
-                            Toggle("Landscape", isOn: $landscape)
-                                .fixedSize()
-                        }
+                        .padding(.vertical, 6)
                     }
                 }
-                .padding(20)
+
+                Section("Color") {
+                    ColorGrid(hex: Binding(get: { accent }, set: { accent = $0; customizedColor = true }))
+                        .padding(.vertical, 4)
+                }
+
+                Section("First Page") {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 12) {
+                            Button { titlePage = nil } label: {
+                                VStack(spacing: 6) {
+                                    RoundedRectangle(cornerRadius: Radius.thumb)
+                                        .fill(.quaternary)
+                                        .aspectRatio(612 / 792, contentMode: .fit)
+                                        .frame(width: 64)
+                                        .overlay(Image(systemName: "nosign").foregroundStyle(.secondary))
+                                        .overlay(selectionRing(titlePage == nil))
+                                    Text("None").font(.caption)
+                                }
+                            }
+                            .buttonStyle(.plain)
+                            ForEach(titlePapers, id: \.ref) { entry in
+                                Button { titlePage = entry.ref } label: {
+                                    VStack(spacing: 6) {
+                                        PaperPreview(template: entry.paper, packID: entry.ref.packID, accent: accent, title: displayTitle)
+                                            .frame(width: 64)
+                                            .overlay(selectionRing(entry.ref == titlePage))
+                                        Text(entry.paper.name).font(.caption).lineLimit(1)
+                                    }
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityAddTraits(entry.ref == titlePage ? .isSelected : [])
+                            }
+                        }
+                        .padding(.vertical, 6)
+                    }
+                }
+
+                Section("Paper") {
+                    PaperGrid(selection: $paper, accent: accent)
+                        .padding(.vertical, 4)
+                }
+
+                Section("Page Size") {
+                    Picker("Size", selection: $sizeName) {
+                        Text("Letter").tag("letter")
+                        Text("A4").tag("a4")
+                        Text("A5").tag("a5")
+                    }
+                    .pickerStyle(.segmented)
+                    Toggle("Landscape", isOn: $landscape)
+                }
             }
-            .background(BrandBackdrop(intensity: 0.35))
-            .navigationTitle(mode == .notebook ? "New notebook" : "New note")
+            .navigationTitle("New Notebook")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Create") { create() }
-                        .buttonStyle(.glassProminent)
-                }
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel", role: .cancel) { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) { Button("Create", role: .confirm, action: create) }
             }
-            .onAppear { accent = app.nextAccent() }
+            .defaultFocus($titleFocused, true)
         }
     }
 
-    private var displayTitle: String { title.isEmpty ? (mode == .notebook ? "My Notebook" : "Note") : title }
+    private var displayTitle: String { title.isEmpty ? "Notebook" : title }
+    private var folderName: String {
+        let relative = app.library.relativePath(of: folder) ?? ""
+        return relative.isEmpty ? "In All Notes" : "In \(folder.lastPathComponent)"
+    }
 
     private var titlePapers: [(ref: ContentRef, paper: PaperTemplate)] {
         app.catalog.allPapers.filter { $0.paper.role == .title }
@@ -215,28 +245,21 @@ struct NewNoteSheet: View {
     private func create() {
         UserDefaults.standard.set(sizeName, forKey: "pageSize")
         let size = NoteFactory.pageSize(for: paper, preferred: pageSize, catalog: app.catalog)
-        let paperRef = PaperRef(template: paper)
-        switch mode {
-        case .notebook:
-            app.createNotebook(title: displayTitle, cover: cover, accent: accent, paper: paperRef, titlePage: titlePage, size: size, in: folder)
-        case .note:
-            app.createNote(title: displayTitle, accent: accent, paper: paperRef, size: size, in: folder)
-        }
-        dismiss()
-    }
-
-    private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(title).font(.headline)
-            content()
+        do {
+            let package = try app.createNotebook(title: displayTitle, cover: cover, accent: accent, paper: PaperRef(template: paper), titlePage: titlePage, size: size, in: folder)
+            dismiss()
+            scene.openNote = .init(package: package)
+        } catch {
+            scene.show(error)
         }
     }
 }
 
+/// Photos-style selection: a tint ring just outside the preview.
 func selectionRing(_ selected: Bool) -> some View {
-    RoundedRectangle(cornerRadius: 8)
-        .stroke(Brand.pink, lineWidth: selected ? 3 : 0)
-        .padding(-4)
+    RoundedRectangle(cornerRadius: Radius.thumb + 3)
+        .stroke(.tint, lineWidth: selected ? 2.5 : 0)
+        .padding(-3)
 }
 
 /// Every writing paper, grouped by category.
@@ -251,18 +274,22 @@ struct PaperGrid: View {
         let categories = papers.map(\.paper.category).reduce(into: [String]()) { if !$0.contains($1) { $0.append($1) } }
         VStack(alignment: .leading, spacing: 16) {
             ForEach(categories, id: \.self) { category in
-                Text(category).font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 88, maximum: 120), spacing: 14)], spacing: 14) {
+                Text(category).font(.footnote).foregroundStyle(.secondary)
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 72, maximum: 96), spacing: 12)], spacing: 12) {
                     ForEach(papers.filter { $0.paper.category == category }, id: \.ref) { entry in
-                        VStack(spacing: 6) {
-                            PaperPreview(template: entry.paper, packID: entry.ref.packID, accent: accent, parameters: entry.ref == selection ? parameters : [:])
-                                .overlay(selectionRing(entry.ref == selection))
-                            Text(entry.paper.name).font(.caption).lineLimit(1)
+                        Button { selection = entry.ref } label: {
+                            VStack(spacing: 6) {
+                                PaperPreview(template: entry.paper, packID: entry.ref.packID, accent: accent, parameters: entry.ref == selection ? parameters : [:])
+                                    .overlay(selectionRing(entry.ref == selection))
+                                Text(entry.paper.name).font(.caption).lineLimit(1)
+                            }
                         }
-                        .onTapGesture { selection = entry.ref }
+                        .buttonStyle(.plain)
+                        .accessibilityAddTraits(entry.ref == selection ? .isSelected : [])
                     }
                 }
             }
         }
+        .sensoryFeedback(.selection, trigger: selection)
     }
 }

@@ -4,206 +4,108 @@
 Usage: python3 Scripts/render_icon.py [asset-catalog-dir]
 Defaults to MBNotes/Resources/Assets.xcassets. Requires Pillow.
 
-The default theme ("sunset") becomes AppIcon with dark and tinted
-appearances. Every other theme becomes an alternate icon set named
-AppIcon-<Theme>, plus an IconPreview-<Theme> image the in-app picker shows.
-Keep THEMES in sync with AppIconTheme.swift.
+The icon is a single sheet of ruled paper on a flat theme color. The only colored
+mark on the page is the margin rule, a nod to "Marginally better". No text, no
+gradients, no decoration, so it reads cleanly at every size.
+
+Each theme produces an icon set with light, dark, and tinted appearances. The
+default theme ("iris") is AppIcon; the rest are AppIcon-<Theme>. Every theme also
+gets an IconPreview-<Theme> image for the in-app picker. Keep THEMES in sync with
+AppTheme in MBNotes/Shared/Theme.swift and the alternate icon list in project.yml.
 """
 
 import json
-import math
 import sys
 from pathlib import Path
 
-from PIL import Image, ImageChops, ImageDraw, ImageFilter
+from PIL import Image, ImageDraw, ImageFilter
 
 SIZE = 1024
 SS = 2  # supersampling factor
 W = SIZE * SS
 
+DEFAULT = "iris"
+
+# icon_bg: the flat background. mark: the margin rule in light mode.
+# mark_dark: the margin rule on the dark appearance. page: paper color in light mode.
 THEMES = {
-    "sunset": dict(bg=((255, 166, 120), (247, 108, 160), (128, 86, 246)), paper=(255, 253, 247), rule=(160, 196, 236),
-                   margin=(244, 140, 140), ink=(76, 58, 214), sticker="star", sticker_fill=(255, 196, 40)),
-    "midnight": dict(bg=((58, 36, 72), (40, 30, 78), (20, 20, 44)), paper=(236, 232, 244), rule=(150, 170, 220),
-                     margin=(226, 120, 130), ink=(90, 70, 210), sticker="star", sticker_fill=(255, 202, 70),
-                     sticker_outline=(246, 242, 252), back_alpha=60, sheen=0.08),
-    "mint": dict(bg=((168, 240, 200), (72, 206, 186), (40, 140, 200)), paper=(250, 255, 252), rule=(150, 210, 200),
-                 margin=(240, 150, 160), ink=(24, 120, 110), sticker="heart", sticker_fill=(255, 112, 150)),
-    "ocean": dict(bg=((130, 210, 255), (60, 130, 246), (48, 52, 180)), paper=(252, 253, 255), rule=(160, 190, 236),
-                  margin=(244, 150, 150), ink=(30, 50, 150), sticker="star", sticker_fill=(255, 210, 60)),
-    "lemonade": dict(bg=((255, 236, 120), (255, 190, 80), (255, 128, 90)), paper=(255, 252, 240), rule=(236, 200, 140),
-                     margin=(240, 130, 120), ink=(160, 70, 40), sticker="heart", sticker_fill=(255, 92, 120)),
-    "bubblegum": dict(bg=((255, 196, 228), (240, 150, 220), (186, 140, 255)), paper=(255, 250, 253), rule=(230, 180, 220),
-                      margin=(240, 140, 180), ink=(150, 60, 190), sticker="flower", sticker_fill=(255, 255, 255),
-                      sticker_center=(255, 200, 60)),
-    "kraft": dict(bg=((214, 176, 128), (184, 140, 96), (140, 100, 70)), paper=(250, 244, 230), rule=(200, 180, 150),
-                  margin=(214, 120, 100), ink=(90, 60, 40), sticker="heart", sticker_fill=(226, 70, 70)),
-    "graphite": dict(bg=((120, 124, 132), (70, 72, 80), (28, 28, 32)), paper=(250, 250, 250), rule=(200, 200, 205),
-                     margin=(210, 210, 214), ink=(30, 30, 34), sticker="star", sticker_fill=(250, 250, 250),
-                     sticker_outline=(60, 60, 66)),
+    "iris": dict(icon_bg="#6A45E0", mark="#6A45E0", mark_dark="#A08BFF"),
+    "graphite": dict(icon_bg="#2C2C2E", mark="#2C2C2E", mark_dark="#D1D1D6"),
+    "ocean": dict(icon_bg="#0A62C9", mark="#0A62C9", mark_dark="#5AA9FF"),
+    "sage": dict(icon_bg="#2E7650", mark="#2E7650", mark_dark="#6CCB98"),
+    "lagoon": dict(icon_bg="#00747F", mark="#00747F", mark_dark="#4FCFD6"),
+    "ember": dict(icon_bg="#D2531F", mark="#B8471A", mark_dark="#FF9466"),
+    "cherry": dict(icon_bg="#BE1E3D", mark="#BE1E3D", mark_dark="#FF6F87"),
+    "rose": dict(icon_bg="#B5336D", mark="#B5336D", mark_dark="#F584B4"),
+    "honey": dict(icon_bg="#E0A21B", mark="#8C5A00", mark_dark="#F2B53A"),
+    "plum": dict(icon_bg="#7E3A9C", mark="#7E3A9C", mark_dark="#D08BF0"),
+    "indigo": dict(icon_bg="#3D4DB7", mark="#3D4DB7", mark_dark="#8D9BFF"),
+    "sepia": dict(icon_bg="#8A6142", mark="#7F5537", mark_dark="#D7A982", page="#FBF6EC"),
 }
 
-
-def lerp(a, b, t):
-    return tuple(int(a[i] + (b[i] - a[i]) * t) for i in range(len(a)))
-
-
-def gradient(c0, c1, c2):
-    # Build a small diagonal gradient and upscale it; smooth enough for an icon.
-    small = 256
-    grad = Image.new("RGB", (small, small))
-    px = grad.load()
-    for y in range(small):
-        for x in range(small):
-            t = (x + y) / (2 * small)
-            px[x, y] = lerp(c0, c1, t * 2) if t < 0.5 else lerp(c1, c2, (t - 0.5) * 2)
-    return grad.resize((W, W), Image.BICUBIC)
+INK = "#1C1C1E"
+RULE = "#D8D8DE"
 
 
-def rounded_rect_mask(size, radius):
-    mask = Image.new("L", size, 0)
-    ImageDraw.Draw(mask).rounded_rectangle([0, 0, size[0] - 1, size[1] - 1], radius=radius, fill=255)
-    return mask
+def rgb(hex_color):
+    h = hex_color.lstrip("#")
+    return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
 
 
-def brush_stroke(draw, points, width, color):
-    """Stamp round dabs along the path so thick strokes have no joint artifacts."""
-    r = width / 2
-    for (x0, y0), (x1, y1) in zip(points, points[1:]):
-        steps = max(1, int(math.hypot(x1 - x0, y1 - y0) / (r * 0.25)))
-        for i in range(steps):
-            t = i / steps
-            x, y = x0 + (x1 - x0) * t, y0 + (y1 - y0) * t
-            draw.ellipse([x - r, y - r, x + r, y + r], fill=color)
-    x, y = points[-1]
-    draw.ellipse([x - r, y - r, x + r, y + r], fill=color)
+def s(v):
+    """Scale a 1024-space coordinate to the supersampled canvas."""
+    return int(round(v * SS))
 
 
-def page_layer(theme):
-    pw, ph = int(560 * SS), int(700 * SS)
-    page = Image.new("RGBA", (pw, ph), theme["paper"] + (255,))
-    d = ImageDraw.Draw(page)
-    top, spacing = int(150 * SS), int(62 * SS)
-    for y in range(top, ph - int(40 * SS), spacing):
-        d.line([(int(36 * SS), y), (pw - int(36 * SS), y)], fill=theme["rule"] + (255,), width=int(5 * SS))
-    mx = int(108 * SS)
-    d.line([(mx, int(30 * SS)), (mx, ph - int(30 * SS))], fill=theme["margin"] + (255,), width=int(5 * SS))
-
-    # One bold, loopy ink stroke: a prolate cycloid reads as handwriting at any size.
-    baseline = top + spacing * 2 - int(8 * SS)
-    x0 = mx + int(48 * SS)
-    loops, step, radius = 3, 96 * SS, 62 * SS
-    stroke = []
-    n = 600
-    for i in range(n + 1):
-        t = i / n * loops * 2 * math.pi
-        x = x0 + step * t / (2 * math.pi) - radius * 0.62 * math.sin(t)
-        y = baseline - radius * 0.55 * (1 - math.cos(t))
-        stroke.append((x, y))
-    tail = stroke[-1]
-    for i in range(1, 41):
-        t = i / 40
-        stroke.append((tail[0] + 64 * SS * t, tail[1] - 16 * SS * math.sin(t * math.pi / 2)))
-    brush_stroke(d, stroke, 26 * SS, theme["ink"] + (255,))
-
-    page.putalpha(ImageChops.multiply(page.getchannel("A"), rounded_rect_mask((pw, ph), int(54 * SS))))
-    return page
+def capped_line(draw, p0, p1, width, color):
+    """A line with round caps."""
+    draw.line([(s(p0[0]), s(p0[1])), (s(p1[0]), s(p1[1]))], fill=color, width=s(width))
+    r = s(width) / 2
+    for x, y in (p0, p1):
+        draw.ellipse([s(x) - r, s(y) - r, s(x) + r, s(y) + r], fill=color)
 
 
-def star_points(cx, cy, r_outer, r_inner):
-    pts = []
-    for i in range(10):
-        r = r_outer if i % 2 == 0 else r_inner
-        a = -math.pi / 2 + i * math.pi / 5
-        pts.append((cx + math.cos(a) * r, cy + math.sin(a) * r))
-    return pts
+def render(theme, mode):
+    """mode is 'light', 'dark', or 'tinted'."""
+    if mode == "light":
+        background = rgb(theme["icon_bg"]) + (255,)
+        page, rule, ink, mark = rgb(theme.get("page", "#FFFFFF")), rgb(RULE), rgb(INK), rgb(theme["mark"])
+        shadow = True
+    elif mode == "dark":
+        # iOS supplies the dark backdrop; the icon itself is transparent around the page.
+        background = (0, 0, 0, 0)
+        page, rule, ink, mark = rgb("#2C2C2E"), rgb("#48484A"), rgb("#EBEBF0"), rgb(theme["mark_dark"])
+        shadow = False
+    else:
+        # Tinted icons are grayscale on black; the brightest pixels take the most tint.
+        background = (0, 0, 0, 255)
+        page, rule, ink, mark = rgb("#4A4A4A"), rgb("#2A2A2A"), rgb("#FFFFFF"), rgb("#FFFFFF")
+        shadow = False
 
+    canvas = Image.new("RGBA", (W, W), background)
 
-def heart_points(cx, cy, scale):
-    pts = []
-    for i in range(200):
-        t = i / 200 * 2 * math.pi
-        x = 16 * math.sin(t) ** 3
-        y = 13 * math.cos(t) - 5 * math.cos(2 * t) - 2 * math.cos(3 * t) - math.cos(4 * t)
-        pts.append((cx + x * scale, cy - y * scale - scale * 1.5))
-    return pts
+    page_box = (262, 192, 762, 832)
+    if shadow:
+        sh = Image.new("RGBA", (W, W), (0, 0, 0, 0))
+        ImageDraw.Draw(sh).rounded_rectangle([s(page_box[0]), s(page_box[1] + 12), s(page_box[2]), s(page_box[3] + 12)], radius=s(64), fill=(0, 0, 0, 26))
+        canvas.alpha_composite(sh.filter(ImageFilter.GaussianBlur(s(24))))
 
+    draw = ImageDraw.Draw(canvas)
+    draw.rounded_rectangle([s(page_box[0]), s(page_box[1]), s(page_box[2]), s(page_box[3])], radius=s(64), fill=page + (255,))
+    capped_line(draw, (382, 322), (602, 322), 30, ink + (255,))
+    for y in (412, 492, 572, 652):
+        capped_line(draw, (382, y), (702, y), 14, rule + (255,))
+    capped_line(draw, (342, 252), (342, 772), 20, mark + (255,))
 
-def draw_shape(draw, kind, c, size, fill):
-    if kind == "star":
-        draw.polygon(star_points(c, c, size, size * 0.5), fill=fill)
-    elif kind == "heart":
-        draw.polygon(heart_points(c, c, size / 16), fill=fill)
-    elif kind == "flower":
-        for i in range(5):
-            a = -math.pi / 2 + i * 2 * math.pi / 5
-            px, py = c + math.cos(a) * size * 0.52, c + math.sin(a) * size * 0.52
-            r = size * 0.46
-            draw.ellipse([px - r, py - r, px + r, py + r], fill=fill)
-
-
-def sticker_layer(theme):
-    s = int(300 * SS)
-    c = s / 2
-    kind = theme["sticker"]
-    outline = theme.get("sticker_outline", (255, 255, 255))
-    base = Image.new("RGBA", (s, s), (0, 0, 0, 0))
-    draw_shape(ImageDraw.Draw(base), kind, c, 116 * SS, outline + (255,))
-    # Grow the silhouette to get a white die-cut border.
-    border = base.filter(ImageFilter.MaxFilter(int(19 * SS) | 1))
-    art = Image.new("RGBA", (s, s), (0, 0, 0, 0))
-    ad = ImageDraw.Draw(art)
-    draw_shape(ad, kind, c, 112 * SS, theme["sticker_fill"] + (255,))
-    if kind == "flower":
-        # White petals need a visible edge, then a yellow center.
-        petals = art.filter(ImageFilter.MaxFilter(int(7 * SS) | 1))
-        tint = Image.new("RGBA", (s, s), theme["ink"] + (255,))
-        tint.putalpha(petals.getchannel("A"))
-        border.alpha_composite(tint)
-        r = 40 * SS
-        ad.ellipse([c - r, c - r, c + r, c + r], fill=theme["sticker_center"] + (255,))
-    border.alpha_composite(art)
-    return border
-
-
-def shadow_of(layer, blur, opacity):
-    pad = int(blur * 3)
-    alpha = Image.new("L", (layer.width + pad * 2, layer.height + pad * 2), 0)
-    alpha.paste(layer.getchannel("A").point(lambda a: int(a * opacity)), (pad, pad))
-    alpha = alpha.filter(ImageFilter.GaussianBlur(blur))
-    shadow = Image.new("RGBA", alpha.size, (40, 12, 60, 255))
-    shadow.putalpha(alpha)
-    return shadow
-
-
-def paste_rotated(canvas, layer, center, angle, shadow=None):
-    if shadow is not None:
-        blur, opacity, offset = shadow
-        sh = shadow_of(layer, blur * SS, opacity).rotate(angle, resample=Image.BICUBIC, expand=True)
-        canvas.alpha_composite(sh, (int(center[0] - sh.width / 2 + offset[0] * SS), int(center[1] - sh.height / 2 + offset[1] * SS)))
-    rot = layer.rotate(angle, resample=Image.BICUBIC, expand=True)
-    canvas.alpha_composite(rot, (int(center[0] - rot.width / 2), int(center[1] - rot.height / 2)))
-
-
-def render(theme, grayscale=False):
-    canvas = gradient(*theme["bg"]).convert("RGBA")
-    fade = Image.linear_gradient("L").resize((W, W)).point(lambda v: int((255 - v) * theme.get("sheen", 0.22)))
-    sheen = Image.new("RGBA", (W, W), (255, 255, 255, 0))
-    sheen.putalpha(fade)
-    canvas.alpha_composite(sheen)
-
-    back = Image.new("RGBA", (int(560 * SS), int(700 * SS)), (255, 255, 255, theme.get("back_alpha", 120)))
-    back.putalpha(ImageChops.multiply(back.getchannel("A"), rounded_rect_mask(back.size, int(54 * SS))))
-    paste_rotated(canvas, back, (W * 0.54, W * 0.52), -2)
-    paste_rotated(canvas, page_layer(theme), (W * 0.47, W * 0.53), 8, shadow=(26, 0.35, (0, 18)))
-    paste_rotated(canvas, sticker_layer(theme), (W * 0.72, W * 0.27), -14, shadow=(10, 0.3, (0, 8)))
-
-    img = canvas.convert("RGB").resize((SIZE, SIZE), Image.LANCZOS)
-    return img.convert("L").convert("RGB") if grayscale else img
+    return canvas.resize((SIZE, SIZE), Image.LANCZOS)
 
 
 def write_json(path, payload):
     path.write_text(json.dumps(payload, indent=2) + "\n")
+
+
+def icon_set(catalog, name):
+    return catalog / ("AppIcon.appiconset" if name == DEFAULT else f"AppIcon-{name.capitalize()}.appiconset")
 
 
 def main():
@@ -211,30 +113,25 @@ def main():
     info = {"author": "xcode", "version": 1}
     for name, theme in THEMES.items():
         title = name.capitalize()
-        icon = render(theme)
-        if name == "sunset":
-            out = catalog / "AppIcon.appiconset"
-            out.mkdir(parents=True, exist_ok=True)
-            icon.save(out / "AppIcon.png")
-            render(THEMES["midnight"]).save(out / "AppIcon-Dark.png")
-            render(theme, grayscale=True).save(out / "AppIcon-Tinted.png")
-            write_json(out / "Contents.json", {"images": [
-                {"filename": "AppIcon.png", "idiom": "universal", "platform": "ios", "size": "1024x1024"},
-                {"appearances": [{"appearance": "luminosity", "value": "dark"}], "filename": "AppIcon-Dark.png",
-                 "idiom": "universal", "platform": "ios", "size": "1024x1024"},
-                {"appearances": [{"appearance": "luminosity", "value": "tinted"}], "filename": "AppIcon-Tinted.png",
-                 "idiom": "universal", "platform": "ios", "size": "1024x1024"},
-            ], "info": info})
-        else:
-            out = catalog / f"AppIcon-{title}.appiconset"
-            out.mkdir(parents=True, exist_ok=True)
-            icon.save(out / f"AppIcon-{title}.png")
-            write_json(out / "Contents.json", {"images": [
-                {"filename": f"AppIcon-{title}.png", "idiom": "universal", "platform": "ios", "size": "1024x1024"},
-            ], "info": info})
+        out = icon_set(catalog, name)
+        out.mkdir(parents=True, exist_ok=True)
+        base = "AppIcon" if name == DEFAULT else f"AppIcon-{title}"
+        light = render(theme, "light")
+        # The light image sits on an opaque background, so drop alpha for the catalog.
+        light.convert("RGB").save(out / f"{base}.png")
+        render(theme, "dark").save(out / f"{base}-Dark.png")
+        render(theme, "tinted").convert("RGB").save(out / f"{base}-Tinted.png")
+        write_json(out / "Contents.json", {"images": [
+            {"filename": f"{base}.png", "idiom": "universal", "platform": "ios", "size": "1024x1024"},
+            {"appearances": [{"appearance": "luminosity", "value": "dark"}], "filename": f"{base}-Dark.png",
+             "idiom": "universal", "platform": "ios", "size": "1024x1024"},
+            {"appearances": [{"appearance": "luminosity", "value": "tinted"}], "filename": f"{base}-Tinted.png",
+             "idiom": "universal", "platform": "ios", "size": "1024x1024"},
+        ], "info": info})
+
         preview = catalog / f"IconPreview-{title}.imageset"
         preview.mkdir(parents=True, exist_ok=True)
-        icon.resize((256, 256), Image.LANCZOS).save(preview / f"IconPreview-{title}.png")
+        light.convert("RGB").resize((256, 256), Image.LANCZOS).save(preview / f"IconPreview-{title}.png")
         write_json(preview / "Contents.json", {"images": [
             {"filename": f"IconPreview-{title}.png", "idiom": "universal"},
         ], "info": info})

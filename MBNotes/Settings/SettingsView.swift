@@ -3,107 +3,173 @@ import NoteIntelligence
 import SwiftUI
 
 struct SettingsView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.theme) private var theme
+    @AppStorage(AppearancePreference.storageKey) private var appearanceID = AppearancePreference.system.rawValue
+    @AppStorage(AppTheme.matchIconKey) private var matchIcon = true
     @AppStorage("pageSize") private var pageSize = "letter"
+    @AppStorage("pageScrollAxis") private var pageScrollAxis = "horizontal"
     @AppStorage("fingerDrawing") private var fingerDrawing = !UIPencilInteraction.prefersPencilOnlyDrawing
     @AppStorage("shapeSnapping") private var shapeSnapping = true
+    @AppStorage("tapUndoGestures") private var tapUndoGestures = true
     @AppStorage("liveTranscription") private var liveTranscription = true
     @AppStorage("process.retranscribe") private var retranscribe = true
     @AppStorage("process.speakers") private var speakers = true
     @AppStorage("process.fillers") private var fillers = true
     @AppStorage("process.clean") private var cleanAudio = false
     @AppStorage("playCleanAudio") private var playCleanAudio = true
+    @State private var models = ModelManager.shared
 
     var body: some View {
         Form {
-            Section("Look and feel") {
-                NavigationLink { AppIconPicker() } label: {
-                    Label("App icon", systemImage: "app.badge")
+            Section("Appearance") {
+                NavigationLink { ThemePicker() } label: {
+                    HStack {
+                        Label("Theme", systemImage: "paintpalette")
+                        Spacer()
+                        Circle().fill(theme.accent).frame(width: 18, height: 18)
+                        Text(theme.name).foregroundStyle(.secondary)
+                    }
                 }
+                Picker(selection: $appearanceID) {
+                    ForEach(AppearancePreference.allCases) { Text($0.title).tag($0.rawValue) }
+                } label: {
+                    Label("Appearance", systemImage: "circle.lefthalf.filled")
+                }
+                Toggle(isOn: $matchIcon) { Label("Match App Icon to Theme", systemImage: "app") }
+                    .onChange(of: matchIcon) { if matchIcon { theme.applyIconIfNeeded() } }
             }
 
             Section {
-                Toggle("Draw with your finger", isOn: $fingerDrawing)
-                Toggle("Snap shapes", isOn: $shapeSnapping)
-                Picker("New page size", selection: $pageSize) {
+                Picker(selection: $pageScrollAxis) {
+                    Text("Side by Side").tag("horizontal")
+                    Text("Continuous").tag("vertical")
+                } label: {
+                    Label("Pages", systemImage: "rectangle.portrait.on.rectangle.portrait")
+                }
+                Picker(selection: $pageSize) {
                     Text("Letter").tag("letter")
                     Text("A4").tag("a4")
                     Text("A5").tag("a5")
+                } label: {
+                    Label("New Page Size", systemImage: "doc")
                 }
+                Toggle(isOn: $fingerDrawing) { Label("Draw with Finger", systemImage: "hand.draw") }
+                Toggle(isOn: $shapeSnapping) { Label("Snap Shapes", systemImage: "square.on.circle") }
             } header: {
                 Text("Writing")
             } footer: {
-                Text("With snapping on, draw a rectangle, circle, triangle, star, or line and pause before lifting to turn it into a clean shape.")
+                Text("With Snap Shapes on, draw a shape and pause before lifting to turn it into a clean line, arrow, polygon, or ellipse.")
             }
 
             Section {
-                Toggle("Live transcript while recording", isOn: $liveTranscription)
-                Toggle("Re-transcribe with Voz", isOn: $retranscribe)
-                Toggle("Label speakers", isOn: $speakers)
-                Toggle("Find filler words", isOn: $fillers)
-                Toggle("Clean up audio after recording", isOn: $cleanAudio)
-                Toggle("Play cleaned-up audio", isOn: $playCleanAudio)
+                Toggle(isOn: $tapUndoGestures) { Label("Tap to Undo and Redo", systemImage: "hand.tap") }
+            } header: {
+                Text("Gestures")
+            } footer: {
+                Text("Tap with two fingers to undo and three to redo. Hold to keep going. Double-tap with a finger to zoom. Pinch to zoom anywhere.")
+            }
+
+            Section {
+                Toggle(isOn: $liveTranscription) { Label("Live Transcript", systemImage: "text.bubble") }
+                modelToggle("Improve Transcript Afterward", systemImage: "text.badge.checkmark", isOn: $retranscribe, model: .voz)
+                modelToggle("Label Speakers", systemImage: "person.2", isOn: $speakers, model: .diarizer)
+                modelToggle("Find Filler Words", systemImage: "scissors", isOn: $fillers, model: .uhm)
+                modelToggle("Clean Up Audio", systemImage: "wand.and.sparkles", isOn: $cleanAudio, model: .clear)
+                Toggle(isOn: $playCleanAudio) { Label("Play Cleaned-Up Audio", systemImage: "speaker.wave.2") }
             } header: {
                 Text("Recording")
             } footer: {
-                Text("Live transcripts use Apple's on-device speech recognition. The other steps run after you stop recording, only with models you've downloaded below. Recordings never leave your device.")
+                Text("Live transcripts use Apple's on-device speech recognition. The other steps run after you stop, using the on-device models below. Recordings never leave your device.")
             }
 
             Section("Intelligence") {
-                NavigationLink { AISettingsView() } label: {
-                    Label("AI", systemImage: "sparkles")
-                }
-                NavigationLink { ModelsView() } label: {
-                    Label("On-device models", systemImage: "cpu")
-                }
+                NavigationLink { AISettingsView() } label: { Label("AI", systemImage: "sparkles") }
+                NavigationLink { ModelsView() } label: { Label("On-Device Models", systemImage: "cpu") }
+            }
+
+            Section("Content") {
+                NavigationLink { PacksView() } label: { Label("Packs", systemImage: "shippingbox") }
             }
 
             Section {
-                NavigationLink { AboutView() } label: {
-                    Label("About MB Notes", systemImage: "info.circle")
+                NavigationLink { AboutView() } label: { Label("About MB Notes", systemImage: "info.circle") }
+            }
+        }
+        .navigationTitle("Settings")
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) { Button("Done", role: .confirm) { dismiss() } }
+        }
+    }
+
+    /// A feature toggle that reads as off when its model is turned off, rather than a second switch.
+    private func modelToggle(_ title: String, systemImage: String, isOn: Binding<Bool>, model: OnDeviceModel) -> some View {
+        let available = models.isEnabled(model)
+        return Toggle(isOn: isOn) {
+            VStack(alignment: .leading, spacing: 2) {
+                Label(title, systemImage: systemImage)
+                if !available {
+                    Text("\(model.name) is turned off in On-Device Models").font(.caption).foregroundStyle(.secondary)
+                } else if !models.phase(model).isReady {
+                    Text("Downloads \(model.name) when first needed").font(.caption).foregroundStyle(.secondary)
                 }
             }
         }
-        .scrollContentBackground(.hidden)
-        .background(BrandBackdrop(intensity: 0.4))
-        .navigationTitle("Settings")
+        .disabled(!available)
     }
 }
 
-struct AppIconPicker: View {
-    @State private var current = AppIconTheme.current
-    @State private var error: String?
+/// Pick a color theme. The app re-tints immediately; the icon changes once, on the way out.
+struct ThemePicker: View {
+    @AppStorage(AppTheme.storageKey) private var themeID = AppTheme.default.rawValue
+    @AppStorage(AppTheme.matchIconKey) private var matchIcon = true
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var iconError: String?
 
     var body: some View {
-        ScrollView {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 110), spacing: 20)], spacing: 24) {
-                ForEach(AppIconTheme.allCases) { theme in
-                    Button {
-                        UIApplication.shared.setAlternateIconName(theme.iconName) { failure in
-                            Task { @MainActor in
-                                if let failure { error = failure.localizedDescription } else { current = theme }
-                            }
-                        }
-                    } label: {
-                        VStack(spacing: 8) {
+        List {
+            Section {
+                ForEach(AppTheme.allCases) { theme in
+                    Button { themeID = theme.rawValue } label: {
+                        HStack(spacing: 14) {
                             Image(theme.previewImage)
                                 .resizable()
-                                .frame(width: 92, height: 92)
-                                .clipShape(.rect(cornerRadius: 22))
-                                .shadow(color: .black.opacity(0.15), radius: 6, y: 3)
-                                .overlay(RoundedRectangle(cornerRadius: 24).stroke(Brand.pink, lineWidth: current == theme ? 3 : 0).padding(-5))
-                            Text(theme.title).font(.subheadline.weight(current == theme ? .semibold : .regular))
+                                .frame(width: 44, height: 44)
+                                .clipShape(.rect(cornerRadius: 44 * 0.2237, style: .continuous))
+                                .overlay(RoundedRectangle(cornerRadius: 44 * 0.2237, style: .continuous).strokeBorder(.separator, lineWidth: 0.5))
+                            Text(theme.name)
+                            Spacer()
+                            HStack(spacing: 4) {
+                                Circle().fill(Color(hex: theme.light.accent)).frame(width: 14, height: 14)
+                                Circle().fill(Color(hex: theme.light.secondaryAccent)).frame(width: 14, height: 14)
+                            }
+                            Image(systemName: "checkmark")
+                                .font(.body.weight(.semibold))
+                                .foregroundStyle(.tint)
+                                .opacity(themeID == theme.rawValue ? 1 : 0)
                         }
                     }
                     .buttonStyle(.plain)
+                    .accessibilityAddTraits(themeID == theme.rawValue ? .isSelected : [])
+                }
+            } footer: {
+                if let iconError {
+                    Text(iconError)
+                } else if matchIcon {
+                    Text("The app icon follows the theme. iOS will confirm the icon change when you leave this screen.")
                 }
             }
-            .padding(24)
-            if let error {
-                Text(error).font(.caption).foregroundStyle(.red)
-            }
         }
-        .background(BrandBackdrop(intensity: 0.4))
-        .navigationTitle("App icon")
+        .navigationTitle("Theme")
+        .sensoryFeedback(.selection, trigger: themeID)
+        .onDisappear(perform: applyIcon)
+    }
+
+    private func applyIcon() {
+        guard scenePhase == .active else { return }
+        (AppTheme(rawValue: themeID) ?? .default).applyIconIfNeeded { error in
+            Task { @MainActor in iconError = error?.localizedDescription }
+        }
     }
 }
 
@@ -132,7 +198,7 @@ struct AISettingsView: View {
 
             if ai.backend == .local {
                 Section {
-                    NavigationLink("Choose and download a model") { ModelsView() }
+                    NavigationLink("Choose and Download a Model") { ModelsView() }
                     LabeledContent("Model", value: ModelManager.shared.localModelID)
                 } footer: {
                     Text("The model loads only while it's answering and unloads after a short idle period.")
@@ -154,11 +220,11 @@ struct AISettingsView: View {
                         .keyboardType(.URL)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
-                    SecureField("API key", text: $ai.apiKey)
+                    SecureField("API Key", text: $ai.apiKey)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                     if let preset = ProviderPreset.all.first(where: { $0.id == ai.presetID }), let keyURL = preset.keyURL, let url = URL(string: keyURL) {
-                        Link("Get a \(preset.name) key", destination: url)
+                        Link("Get a \(preset.name) Key", destination: url)
                     }
                 }
                 Section {
@@ -171,16 +237,16 @@ struct AISettingsView: View {
                         } label: {
                             if loadingModels { ProgressView() } else { Image(systemName: "arrow.clockwise") }
                         }
-                        .accessibilityLabel("Load models")
+                        .accessibilityLabel("Load Models")
                     }
                     if !models.isEmpty {
-                        Picker("Available models", selection: $ai.model) {
+                        Picker("Available Models", selection: $ai.model) {
                             ForEach(models, id: \.self) { Text($0).tag($0) }
                         }
                         .pickerStyle(.navigationLink)
                     }
                     if let modelError {
-                        Text(modelError).font(.footnote).foregroundStyle(.red)
+                        Text(modelError).font(.footnote).foregroundStyle(.secondary)
                     }
                 } header: {
                     Text("Model")
@@ -231,107 +297,49 @@ struct AISettingsView: View {
     }
 }
 
-struct ModelsView: View {
-    @State private var manager = ModelManager.shared
-    @State private var customRepo = ""
+struct AboutView: View {
+    @Environment(\.theme) private var theme
 
     var body: some View {
         List {
             Section {
-                ForEach(OnDeviceModel.allCases.filter { $0 != .localLLM }) { model in
-                    ModelRow(model: model, manager: manager)
+                VStack(spacing: 10) {
+                    Image(theme.previewImage)
+                        .resizable()
+                        .frame(width: 96, height: 96)
+                        .clipShape(.rect(cornerRadius: 96 * 0.2237, style: .continuous))
+                    Text("MB Notes").font(.title2.weight(.semibold))
+                    Text("Marginally better notes. Free and open source, for everyone.")
+                        .multilineTextAlignment(.center)
+                        .foregroundStyle(.secondary)
+                    Text("Version \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")")
+                        .font(.caption).foregroundStyle(.tertiary)
                 }
-            } header: {
-                Text("Note and recording models")
-            } footer: {
-                Text("Small models download by themselves the first time a feature needs them. Larger ones wait for you. Everything runs on this device.")
+                .frame(maxWidth: .infinity)
+                .padding(.vertical)
             }
-
+            Section("Open Source") {
+                Link("Source Code on GitHub", destination: URL(string: "https://github.com/Marginally-Better-Apps/MB-Notes")!)
+                Link("Make a Pack", destination: URL(string: "https://github.com/Marginally-Better-Apps/MB-Notes/blob/main/docs/PACKS.md")!)
+                Text("MB Notes is released under the MIT License. Built-in papers, covers, and stickers were made for MB Notes and are public domain (CC0). Emoji are drawn by your device's system font.")
+                    .font(.footnote)
+            }
             Section {
-                ForEach(LocalModelPreset.all) { preset in
-                    Button {
-                        manager.localModelID = preset.id
-                    } label: {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(preset.name).font(.body.weight(.medium))
-                                Text("\(preset.size) · \(preset.note)").font(.caption).foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            if manager.localModelID == preset.id { Image(systemName: "checkmark").foregroundStyle(Brand.pink) }
-                        }
-                    }
-                    .buttonStyle(.plain)
-                }
-                HStack {
-                    TextField("Any MLX model, e.g. mlx-community/…", text: $customRepo)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                    Button("Use") { manager.localModelID = customRepo.trimmingCharacters(in: .whitespaces) }
-                        .disabled(!customRepo.contains("/"))
-                }
-                ModelRow(model: .localLLM, manager: manager)
+                Link("Powered by Desert Ant Labs", destination: URL(string: "https://desertant.com")!)
+                Text("Shape recognition, Voz transcription, Clear audio cleanup, Uhm filler detection, Gist tags, and Title suggestions use on-device models by Desert Ant Labs under the Desert Ant Labs Source-Available License. Their SDK sends an anonymous monthly-active-device count with no notes, audio, or other content.")
+                    .font(.footnote)
+                Text("Speaker labels use FluidAudio (Apache-2.0) with pyannote community models. Local language models run with MLX Swift (MIT) and come from Hugging Face under each model's own license.")
+                    .font(.footnote)
             } header: {
-                Text("Local language model")
-            } footer: {
-                Text("Pick a small Hugging Face model for summaries and questions without the internet. Then choose “On-device model” in Settings › AI.")
+                Text("Credits")
+            }
+            Section {
+                Text("Your notes are plain files in the Files app under On My iPhone or iPad › MB Notes. Recordings, transcripts, and handwriting recognition stay on this device. AI features send note text only to the provider you choose, only when you use them.")
+                    .font(.footnote)
+            } header: {
+                Text("Privacy")
             }
         }
-        .navigationTitle("On-device models")
-        .onAppear { manager.refresh() }
-    }
-}
-
-private struct ModelRow: View {
-    let model: OnDeviceModel
-    let manager: ModelManager
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: model.systemImage)
-                .font(.title3)
-                .foregroundStyle(Brand.gradient)
-                .frame(width: 30)
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text(model == .localLLM ? manager.localModelID.components(separatedBy: "/").last ?? model.name : model.name)
-                        .font(.body.weight(.semibold))
-                    Text(model.approximateSize).font(.caption).foregroundStyle(.secondary)
-                }
-                Text(model.purpose).font(.caption).foregroundStyle(.secondary)
-                Text(model.vendor).font(.caption2).foregroundStyle(.tertiary)
-                statusView
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(.vertical, 4)
-    }
-
-    @ViewBuilder private var statusView: some View {
-        switch manager.status(model) {
-        case .ready:
-            HStack {
-                Label("Ready", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
-                Spacer()
-                Button("Delete", role: .destructive) { manager.delete(model) }
-            }
-            .font(.caption.weight(.semibold))
-        case .downloading(let fraction):
-            HStack {
-                ProgressView(value: fraction)
-                Button("Cancel") { manager.cancel(model) }.font(.caption)
-            }
-        case .notDownloaded:
-            Button("Download") { manager.download(model) }
-                .buttonStyle(.glass)
-                .font(.caption.weight(.semibold))
-        case .failed(let message):
-            VStack(alignment: .leading) {
-                Text(message).font(.caption).foregroundStyle(.red)
-                Button("Try again") { manager.download(model) }.font(.caption)
-            }
-        case .unavailable(let reason):
-            Text(reason).font(.caption).foregroundStyle(.secondary)
-        }
+        .navigationTitle("About")
     }
 }

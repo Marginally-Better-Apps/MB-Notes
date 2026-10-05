@@ -1,8 +1,11 @@
 import Foundation
+import ZIPFoundation
 
 /// File access for one `.mbnote` package. See `NoteManifest` for the layout.
 public struct NotePackage: Hashable, Sendable {
     public static let fileExtension = "mbnote"
+    /// A zipped note for Mail, Messages, and anything else that cannot attach a folder.
+    public static let archiveExtension = "mbnotes"
     public static let manifestName = "document.json"
     public static let thumbnailName = "thumbnail.png"
 
@@ -38,10 +41,15 @@ public struct NotePackage: Hashable, Sendable {
     // MARK: Files inside the package
 
     /// Resolves a package-relative path, refusing anything that escapes the package.
+    ///
+    /// Checks path components rather than comparing standardized paths: on device the
+    /// container lives under `/private/var` (a symlink to `/var`), and `standardizedFileURL`
+    /// only strips `/private` from paths that already exist, so new files would be refused.
     public func fileURL(_ relativePath: String) -> URL? {
-        let resolved = url.appendingPathComponent(relativePath).standardizedFileURL
-        guard resolved.path.hasPrefix(url.standardizedFileURL.path + "/") else { return nil }
-        return resolved
+        guard !relativePath.isEmpty, !relativePath.hasPrefix("/") else { return nil }
+        let parts = relativePath.split(separator: "/", omittingEmptySubsequences: false)
+        guard !parts.contains(where: { $0.isEmpty || $0 == "." || $0 == ".." }) else { return nil }
+        return url.appendingPathComponent(relativePath)
     }
 
     public func inkURL(for pageID: UUID) -> URL {
@@ -104,6 +112,52 @@ public struct NotePackage: Hashable, Sendable {
     public func removePageFiles(_ pageID: UUID) {
         try? FileManager.default.removeItem(at: inkURL(for: pageID))
         try? FileManager.default.removeItem(at: url.appendingPathComponent("recognition/\(pageID.uuidString).json"))
+    }
+
+    // MARK: Archives
+
+    /// Zips the package into the temporary directory. Audio is stored uncompressed since it already is.
+    public func exportArchive(includeRecordings: Bool = true) throws -> URL {
+        let name = url.deletingPathExtension().lastPathComponent
+        let archiveURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(name).\(Self.archiveExtension)")
+        try? FileManager.default.removeItem(at: archiveURL)
+        let archive = try Archive(url: archiveURL, accessMode: .create, pathEncoding: nil)
+        guard let enumerator = FileManager.default.enumerator(at: url, includingPropertiesForKeys: [.isRegularFileKey]) else { return archiveURL }
+        let base = url.standardizedFileURL.path
+        for case let file as URL in enumerator {
+            guard (try? file.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true else { continue }
+            let relative = String(file.standardizedFileURL.path.dropFirst(base.count + 1))
+            if !includeRecordings, relative.hasPrefix("recordings/") { continue }
+            let method: CompressionMethod = file.pathExtension == "m4a" ? .none : .deflate
+            try archive.addEntry(with: "\(name).\(Self.fileExtension)/\(relative)", fileURL: file, compressionMethod: method)
+        }
+        return archiveURL
+    }
+
+    /// Unzips an archive made by `exportArchive` into `folder` and returns the new package.
+    public static func importArchive(_ archiveURL: URL, into folder: URL) throws -> NotePackage {
+        let staging = FileManager.default.temporaryDirectory.appendingPathComponent("note-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: staging) }
+        try FileManager.default.unzipItem(at: archiveURL, to: staging, allowUncontainedSymlinks: false)
+        let children = try FileManager.default.contentsOfDirectory(at: staging, includingPropertiesForKeys: nil)
+        guard let root = children.first(where: { $0.pathExtension == fileExtension }) ?? children.first(where: { FileManager.default.fileExists(atPath: $0.appendingPathComponent(manifestName).path) }) else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        let package = NotePackage(url: root)
+        var manifest = try package.readManifest()
+        manifest.id = UUID()
+        let name = manifest.title.isEmpty ? archiveURL.deletingPathExtension().lastPathComponent : manifest.title
+        let safe = name.replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ":", with: "-")
+        var destination = folder.appendingPathComponent(safe, isDirectory: true).appendingPathExtension(fileExtension)
+        var counter = 2
+        while FileManager.default.fileExists(atPath: destination.path) {
+            destination = folder.appendingPathComponent("\(safe) \(counter)", isDirectory: true).appendingPathExtension(fileExtension)
+            counter += 1
+        }
+        try FileManager.default.moveItem(at: root, to: destination)
+        let imported = NotePackage(url: destination)
+        try imported.writeManifest(manifest)
+        return imported
     }
 
     public var thumbnailURL: URL { url.appendingPathComponent(Self.thumbnailName) }

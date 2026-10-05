@@ -4,7 +4,7 @@
   "name": "MB Notes Essentials",
   "version": "1.0.0",
   "author": "MB Notes contributors",
-  "description": "The papers, covers, stickers, and colors that ship with MB Notes. It uses the same format as every community pack, so it doubles as a worked example.",
+  "description": "The papers, covers, stickers, and colors that ship with MB Notes. It uses the same format as every community pack, so it doubles as a worked example. Everything in it was made for MB Notes.",
   "license": "CC0-1.0",
   "homepage": "https://github.com/Marginally-Better-Apps/MB-Notes",
   "minimumEngineVersion": "1.0",
@@ -15,20 +15,167 @@
     "papers/dark.json",
     "papers/title-pages.json"
   ],
-  "covers": ["covers.json"],
-  "stickers": ["stickers/emoji.json", "stickers/icons.json", "stickers/labels.json"],
+  "covers": [
+    "covers.json"
+  ],
+  "stickers": [
+    "stickers/emoji.json",
+    "stickers/labels.json"
+  ],
   "palettes": [
-    { "id": "sunset", "name": "Sunset", "colors": ["#FFA678", "#F76CA0", "#8056F6", "#4C3AD6", "#FFC428", "#1C1B2E"] },
-    { "id": "pastel", "name": "Pastel", "colors": ["#FFB5C2", "#FFD6A5", "#FDFFB6", "#CAFFBF", "#9BF6FF", "#A0C4FF", "#BDB2FF", "#FFC6FF"] },
-    { "id": "bold", "name": "Bold", "colors": ["#E5484D", "#FF7A45", "#FFB020", "#3FB37F", "#2EB8A6", "#3E8EDE", "#4C3AD6", "#B05CF2"] },
-    { "id": "earth", "name": "Earth", "colors": ["#8C5A3C", "#C08552", "#DDB892", "#7F9172", "#4E6E58", "#A3B18A", "#6B705C", "#CB997E"] },
-    { "id": "ocean", "name": "Ocean", "colors": ["#03045E", "#0077B6", "#00B4D8", "#48CAE4", "#90E0EF", "#2EB8A6", "#5E60CE", "#7400B8"] },
-    { "id": "mono", "name": "Graphite", "colors": ["#1C1B2E", "#3A3A46", "#5C5C6B", "#8A8A99", "#B8B8C4", "#E2E2EA"] }
+    {
+      "id": "themes",
+      "name": "Themes",
+      "colors": [
+        "#6A45E0",
+        "#3D4DB7",
+        "#0A62C9",
+        "#00747F",
+        "#2E7650",
+        "#8C5A00",
+        "#B8471A",
+        "#BE1E3D",
+        "#B5336D",
+        "#7E3A9C",
+        "#7F5537",
+        "#3A3A3C"
+      ]
+    },
+    {
+      "id": "system",
+      "name": "System",
+      "colors": [
+        "#FF3B30",
+        "#FF9500",
+        "#FFCC00",
+        "#34C759",
+        "#00C7BE",
+        "#30B0C7",
+        "#32ADE6",
+        "#007AFF",
+        "#5856D6",
+        "#AF52DE",
+        "#FF2D55",
+        "#A2845E"
+      ]
+    },
+    {
+      "id": "pastel",
+      "name": "Pastel",
+      "colors": [
+        "#FFB5C2",
+        "#FFD6A5",
+        "#FDFFB6",
+        "#CAFFBF",
+        "#9BF6FF",
+        "#A0C4FF",
+        "#BDB2FF",
+        "#FFC6FF"
+      ]
+    },
+    {
+      "id": "earth",
+      "name": "Earth",
+      "colors": [
+        "#8C5A3C",
+        "#C08552",
+        "#DDB892",
+        "#7F9172",
+        "#4E6E58",
+        "#A3B18A",
+        "#6B705C",
+        "#CB997E"
+      ]
+    },
+    {
+      "id": "mono",
+      "name": "Graphite",
+      "colors": [
+        "#1C1C1E",
+        "#3A3A3C",
+        "#636366",
+        "#8E8E93",
+        "#AEAEB2",
+        "#D1D1D6"
+      ]
+    }
   ],
   "symbolSets": [
-    { "id": "school", "name": "School", "symbols": ["book.fill", "books.vertical.fill", "graduationcap.fill", "backpack.fill", "pencil", "pencil.and.ruler.fill", "doc.text.fill", "building.columns.fill", "studentdesk", "text.book.closed.fill", "bookmark.fill", "calendar"] },
-    { "id": "science", "name": "Science & Math", "symbols": ["atom", "flask.fill", "testtube.2", "leaf.fill", "brain.head.profile", "bolt.fill", "globe.americas.fill", "function", "sum", "x.squareroot", "chart.xyaxis.line", "cpu.fill", "stethoscope", "pawprint.fill"] },
-    { "id": "arts", "name": "Arts & Language", "symbols": ["paintpalette.fill", "music.note", "theatermasks.fill", "camera.fill", "film.fill", "guitars.fill", "character.book.closed.fill", "quote.bubble.fill", "textformat", "photo.artframe"] },
-    { "id": "life", "name": "Life", "symbols": ["heart.fill", "star.fill", "sparkles", "house.fill", "briefcase.fill", "cart.fill", "fork.knife", "cup.and.saucer.fill", "figure.run", "airplane", "dollarsign.circle.fill", "moon.stars.fill", "gamecontroller.fill", "laptopcomputer", "lightbulb.fill", "flag.fill"] }
+    {
+      "id": "school",
+      "name": "School",
+      "symbols": [
+        "book.fill",
+        "books.vertical.fill",
+        "graduationcap.fill",
+        "backpack.fill",
+        "pencil",
+        "pencil.and.ruler.fill",
+        "doc.text.fill",
+        "building.columns.fill",
+        "studentdesk",
+        "text.book.closed.fill",
+        "bookmark.fill",
+        "calendar"
+      ]
+    },
+    {
+      "id": "science",
+      "name": "Science & Math",
+      "symbols": [
+        "atom",
+        "flask.fill",
+        "testtube.2",
+        "leaf.fill",
+        "brain.head.profile",
+        "bolt.fill",
+        "globe.americas.fill",
+        "function",
+        "sum",
+        "x.squareroot",
+        "chart.xyaxis.line",
+        "cpu.fill",
+        "stethoscope",
+        "pawprint.fill"
+      ]
+    },
+    {
+      "id": "arts",
+      "name": "Arts & Language",
+      "symbols": [
+        "paintpalette.fill",
+        "music.note",
+        "theatermasks.fill",
+        "camera.fill",
+        "film.fill",
+        "guitars.fill",
+        "character.book.closed.fill",
+        "quote.bubble.fill",
+        "textformat",
+        "photo.artframe"
+      ]
+    },
+    {
+      "id": "life",
+      "name": "Life",
+      "symbols": [
+        "heart.fill",
+        "star.fill",
+        "sparkles",
+        "house.fill",
+        "briefcase.fill",
+        "cart.fill",
+        "fork.knife",
+        "cup.and.saucer.fill",
+        "figure.run",
+        "airplane",
+        "dollarsign.circle.fill",
+        "moon.stars.fill",
+        "gamecontroller.fill",
+        "laptopcomputer",
+        "lightbulb.fill",
+        "flag.fill"
+      ]
+    }
   ]
 }

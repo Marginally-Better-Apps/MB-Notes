@@ -10,6 +10,8 @@ public struct LibraryEntry: Identifiable, Hashable, Sendable {
     public let url: URL
     public let content: Content
     public let modifiedAt: Date
+    /// Notes and folders directly inside a folder; nil for notes.
+    public var itemCount: Int?
 
     public var id: URL { url }
 
@@ -34,6 +36,29 @@ public struct LibraryEntry: Identifiable, Hashable, Sendable {
         if case .folder(let metadata) = content { return metadata }
         return nil
     }
+
+    /// Pinned notes sit at the top of their folder.
+    public var isPinned: Bool {
+        if case .bool(true) = manifest?.extensions[NoteManifest.pinnedKey] { return true }
+        return false
+    }
+}
+
+public extension NoteManifest {
+    /// `extensions` key that marks a note as pinned.
+    static let pinnedKey = "mbnotes.pinned"
+}
+
+/// Where a trashed item came from and when it was deleted.
+public struct DeletionInfo: Codable, Hashable, Sendable {
+    /// Folder path relative to the library root; empty for the root itself.
+    public var originalFolder: String
+    public var deletedAt: Date
+
+    public init(originalFolder: String, deletedAt: Date) {
+        self.originalFolder = originalFolder
+        self.deletedAt = deletedAt
+    }
 }
 
 public enum LibrarySort: String, CaseIterable, Sendable {
@@ -42,9 +67,11 @@ public enum LibrarySort: String, CaseIterable, Sendable {
 
 /// The library is plain directories on disk, so it stays browsable in the Files app.
 /// Folders are directories with an optional `.folder.json`; notes are `.mbnote` packages.
-/// Deleted items move to a hidden `.Trash` folder until emptied.
+/// Deleted items move to a hidden `.Trash` folder, with their original location in
+/// `.Trash/.index.json`, until they are restored, emptied, or 30 days pass.
 public final class LibraryStore: @unchecked Sendable {
     public static let trashName = ".Trash"
+    static let trashIndexName = ".index.json"
 
     public let root: URL
     private let fm = FileManager.default
@@ -82,7 +109,9 @@ public final class LibraryStore: @unchecked Sendable {
         }
         let metadata = folderMetadata(at: url)
         let modified = (try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? metadata.createdAt
-        return LibraryEntry(url: url, content: .folder(metadata), modifiedAt: modified)
+        let children = (try? fm.contentsOfDirectory(at: url, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles])) ?? []
+        let count = children.filter { (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true }.count
+        return LibraryEntry(url: url, content: .folder(metadata), modifiedAt: modified, itemCount: count)
     }
 
     public func folderMetadata(at url: URL) -> FolderMetadata {
@@ -184,25 +213,109 @@ public final class LibraryStore: @unchecked Sendable {
         return destination
     }
 
-    /// Moves an item into the trash.
-    public func delete(_ url: URL) throws {
+    // MARK: Pinning
+
+    public func setPinned(_ pinned: Bool, for url: URL) throws {
+        let package = NotePackage(url: url)
+        var manifest = try package.readManifest()
+        if pinned {
+            manifest.extensions[NoteManifest.pinnedKey] = .bool(true)
+        } else {
+            manifest.extensions[NoteManifest.pinnedKey] = nil
+        }
+        try package.writeManifest(manifest)
+    }
+
+    // MARK: Trash
+
+    /// Moves an item into the trash, remembering where it was.
+    public func delete(_ url: URL, now: Date = Date()) throws {
         try fm.createDirectory(at: trash, withIntermediateDirectories: true)
         let isNote = url.pathExtension == NotePackage.fileExtension
         let name = isNote ? url.deletingPathExtension().lastPathComponent : url.lastPathComponent
-        try fm.moveItem(at: url, to: uniqueURL(named: name, extension: isNote ? NotePackage.fileExtension : nil, in: trash))
+        let destination = uniqueURL(named: name, extension: isNote ? NotePackage.fileExtension : nil, in: trash)
+        let folder = relativePath(of: url.deletingLastPathComponent()) ?? ""
+        try fm.moveItem(at: url, to: destination)
+        var index = readTrashIndex()
+        index[destination.lastPathComponent] = DeletionInfo(originalFolder: folder, deletedAt: now)
+        writeTrashIndex(index)
     }
 
+    /// Trashed items, most recently deleted first.
     public func trashedItems() -> [LibraryEntry] {
-        contents(of: trash)
+        let index = readTrashIndex()
+        return contents(of: trash).sorted {
+            (index[$0.url.lastPathComponent]?.deletedAt ?? $0.modifiedAt) > (index[$1.url.lastPathComponent]?.deletedAt ?? $1.modifiedAt)
+        }
     }
 
+    public func deletionInfo(for url: URL) -> DeletionInfo? {
+        readTrashIndex()[url.lastPathComponent]
+    }
+
+    /// Moves a trashed item back to its original folder, or the library root if that folder is gone.
     @discardableResult
     public func restore(_ url: URL) throws -> URL {
-        try move(url, to: root)
+        var index = readTrashIndex()
+        var destination = root
+        if let info = index[url.lastPathComponent], !info.originalFolder.isEmpty {
+            let folder = root.appendingPathComponent(info.originalFolder, isDirectory: true)
+            var isDirectory: ObjCBool = false
+            if fm.fileExists(atPath: folder.path, isDirectory: &isDirectory), isDirectory.boolValue,
+               !folder.standardizedFileURL.path.hasPrefix(trash.standardizedFileURL.path) {
+                destination = folder
+            }
+        }
+        let restored = try move(url, to: destination)
+        index[url.lastPathComponent] = nil
+        writeTrashIndex(index)
+        return restored
+    }
+
+    /// Permanently deletes one trashed item.
+    public func deletePermanently(_ url: URL) throws {
+        try fm.removeItem(at: url)
+        var index = readTrashIndex()
+        index[url.lastPathComponent] = nil
+        writeTrashIndex(index)
     }
 
     public func emptyTrash() throws {
         if fm.fileExists(atPath: trash.path) { try fm.removeItem(at: trash) }
+    }
+
+    /// Permanently deletes items that have been in the trash for more than `days` days.
+    public func purgeTrash(olderThan days: Int = 30, now: Date = Date()) {
+        let cutoff = now.addingTimeInterval(-Double(days) * 86_400)
+        var index = readTrashIndex()
+        for item in contents(of: trash) {
+            let deleted = index[item.url.lastPathComponent]?.deletedAt ?? item.modifiedAt
+            guard deleted < cutoff else { continue }
+            try? fm.removeItem(at: item.url)
+            index[item.url.lastPathComponent] = nil
+        }
+        writeTrashIndex(index)
+    }
+
+    private var trashIndexURL: URL { trash.appendingPathComponent(Self.trashIndexName) }
+
+    private func readTrashIndex() -> [String: DeletionInfo] {
+        guard let data = try? Data(contentsOf: trashIndexURL) else { return [:] }
+        return (try? NoteJSON.decoder.decode([String: DeletionInfo].self, from: data)) ?? [:]
+    }
+
+    private func writeTrashIndex(_ index: [String: DeletionInfo]) {
+        guard fm.fileExists(atPath: trash.path) else { return }
+        try? NoteJSON.encoder.encode(index).write(to: trashIndexURL, options: .atomic)
+    }
+
+    /// A folder's path relative to the library root, compared by resolved components so
+    /// `/var` and `/private/var` spellings of the same container match.
+    public func relativePath(of folder: URL) -> String? {
+        let base = root.resolvingSymlinksInPath().standardizedFileURL.pathComponents
+        let target = folder.resolvingSymlinksInPath().standardizedFileURL.pathComponents
+        guard target.count >= base.count, Array(target.prefix(base.count)) == base else { return nil }
+        return target.dropFirst(base.count).joined(separator: "/")
     }
 
     // MARK: Names

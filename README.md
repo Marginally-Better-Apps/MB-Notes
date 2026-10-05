@@ -1,4 +1,4 @@
-<p align="center"><img src="MBNotes/Resources/Assets.xcassets/IconPreview-Sunset.imageset/IconPreview-Sunset.png" width="128" alt="MB Notes icon"></p>
+<p align="center"><img src="MBNotes/Resources/Assets.xcassets/IconPreview-Iris.imageset/IconPreview-Iris.png" width="128" alt="MB Notes icon"></p>
 
 # MB Notes
 
@@ -9,7 +9,7 @@
 - **Handwriting first.** PencilKit ink on lined, dot, grid, Cornell, planner, music, isometric, and other papers. The Pencil draws and fingers scroll; finger drawing is one tap away. Type second with the text tool.
 - **Shape snapping.** Draw a box, circle, triangle, star, or line and pause; it snaps clean.
 - **Write on anything.** Import PDF, PowerPoint, Word, Excel, Keynote, Pages, OpenDocument (ODT, ODP, ODS), RTF, text, and images, then annotate.
-- **Cute organization.** Folders with your own colors, SF Symbols, and stickers. Notebooks with covers and decorated title pages. Stickers and washi tape on pages. Eight app icons to choose from.
+- **Yours to organize.** Folders with your own colors and symbols. Notebooks with covers and title pages. Stickers, any emoji, and washi tape on pages. Twelve color themes, each with light and dark looks and a matching app icon.
 - **Lecture mode.** Record while you write. You get a live on-device transcript, speaker labels you can rename or hide ("Professor", "Student"), filler-word skipping, cleaned-up audio, and playback that shows what you were writing at each moment. Tap any stroke to hear what was being said.
 - **Searchable everything.** Handwriting is recognized on device. Search covers titles, handwriting, typed text, imported slides, and transcripts. PDF exports carry an invisible text layer, so other apps can search them too.
 - **Bring your own AI.** Summaries and Q&A with Apple Intelligence, a small Hugging Face model running on your device, or your own key for any OpenAI-compatible API. Presets cover OpenAI, OpenRouter, Anthropic, Gemini, Groq, Ollama, and more. AI is off until you choose.

@@ -167,31 +167,28 @@ public struct CoverDesign: Codable, Hashable, Sendable, Identifiable {
     }
 }
 
-/// A sticker. Exactly one of `emoji`, `symbol`, `image`, or `layers` describes its art.
+/// A sticker. Exactly one of `emoji`, `image`, or `layers` describes its art.
 public struct StickerDefinition: Codable, Hashable, Sendable, Identifiable {
     public var id: String
     public var name: String
     public var category: String
     public var emoji: String?
-    /// An SF Symbol name.
-    public var symbol: String?
-    /// Color for `symbol` stickers.
-    public var tint: String?
     /// A PNG, JPEG, or PDF inside the pack.
     public var image: String?
     /// Vector art drawn on `canvas`.
     public var layers: [Layer]?
     public var canvas: PageSize?
+    /// Search keywords beyond the name.
+    public var tags: [String]
     /// Draws a white die-cut border around the art.
     public var outlined: Bool
 
-    public init(id: String, name: String, category: String = "Fun", emoji: String? = nil, symbol: String? = nil, tint: String? = nil, image: String? = nil, layers: [Layer]? = nil, canvas: PageSize? = nil, outlined: Bool = true) {
+    public init(id: String, name: String, category: String = "Fun", emoji: String? = nil, image: String? = nil, layers: [Layer]? = nil, canvas: PageSize? = nil, tags: [String] = [], outlined: Bool = true) {
         self.id = id
         self.name = name
         self.category = category
         self.emoji = emoji
-        self.symbol = symbol
-        self.tint = tint
+        self.tags = tags
         self.image = image
         self.layers = layers
         self.canvas = canvas
@@ -204,9 +201,8 @@ public struct StickerDefinition: Codable, Hashable, Sendable, Identifiable {
         name = try c.decodeIfPresent(String.self, forKey: .name) ?? id
         category = try c.decodeIfPresent(String.self, forKey: .category) ?? "Fun"
         emoji = try c.decodeIfPresent(String.self, forKey: .emoji)
-        symbol = try c.decodeIfPresent(String.self, forKey: .symbol)
-        tint = try c.decodeIfPresent(String.self, forKey: .tint)
         image = try c.decodeIfPresent(String.self, forKey: .image)
+        tags = try c.decodeIfPresent([String].self, forKey: .tags) ?? []
         layers = try c.decodeIfPresent([Layer].self, forKey: .layers)
         canvas = try c.decodeIfPresent(PageSize.self, forKey: .canvas)
         outlined = try c.decodeIfPresent(Bool.self, forKey: .outlined) ?? true

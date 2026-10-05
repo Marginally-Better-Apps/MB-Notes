@@ -326,18 +326,61 @@ public struct RecordingSummary: Codable, Hashable, Sendable, Identifiable {
     public var id: UUID
     public var title: String
     public var startedAt: Date
+    /// Seconds of audio, excluding pauses.
     public var duration: Double
+    /// Package-relative audio file. Newer notes use crash-tolerant `.caf`; nil means the
+    /// original `recordings/<id>.m4a`.
+    public var audioFile: String?
+    /// True from the moment recording starts until it stops cleanly, so a crash mid-lecture
+    /// leaves a recording that can be recovered rather than lost.
+    public var inProgress: Bool
+    /// Wall-clock stretches (seconds since `startedAt`) when recording was paused, so ink
+    /// written during a pause lines up with the audio around it.
+    public var pauses: [Transcript.Span]
 
-    public init(id: UUID = UUID(), title: String, startedAt: Date, duration: Double) {
+    public init(id: UUID = UUID(), title: String, startedAt: Date, duration: Double, audioFile: String? = nil, inProgress: Bool = false, pauses: [Transcript.Span] = []) {
         self.id = id
         self.title = title
         self.startedAt = startedAt
         self.duration = duration
+        self.audioFile = audioFile
+        self.inProgress = inProgress
+        self.pauses = pauses
     }
 
-    public var audioPath: String { "recordings/\(id.uuidString).m4a" }
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        title = try c.decodeIfPresent(String.self, forKey: .title) ?? "Recording"
+        startedAt = try c.decode(Date.self, forKey: .startedAt)
+        duration = try c.decodeIfPresent(Double.self, forKey: .duration) ?? 0
+        audioFile = try c.decodeIfPresent(String.self, forKey: .audioFile)
+        inProgress = try c.decodeIfPresent(Bool.self, forKey: .inProgress) ?? false
+        pauses = try c.decodeIfPresent([Transcript.Span].self, forKey: .pauses) ?? []
+    }
+
+    public var audioPath: String { audioFile ?? "recordings/\(id.uuidString).m4a" }
     public var transcriptPath: String { "recordings/\(id.uuidString).json" }
     public var enhancedAudioPath: String { "recordings/\(id.uuidString).clear.m4a" }
+
+    /// Converts a time in the audio to the wall-clock moment it was recorded, skipping pauses.
+    public func wallClock(forAudioTime time: Double) -> Date {
+        var offset = time
+        for pause in pauses.sorted(by: { $0.start < $1.start }) where pause.start <= offset {
+            offset += pause.end - pause.start
+        }
+        return startedAt.addingTimeInterval(offset)
+    }
+
+    /// Converts a wall-clock moment to the time in the audio, skipping pauses.
+    public func audioTime(for date: Date) -> Double {
+        let wall = date.timeIntervalSince(startedAt)
+        var paused = 0.0
+        for pause in pauses where pause.start < wall {
+            paused += min(pause.end, wall) - pause.start
+        }
+        return wall - paused
+    }
 }
 
 public struct EmbeddedResources: Codable, Hashable, Sendable {

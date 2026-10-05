@@ -39,10 +39,12 @@ On-device models and AI providers. See [MODELS.md](MODELS.md).
 
 ### `MBNotes` (the app)
 
-- `Library/`: `NavigationSplitView` sidebar, folder grids, folder customization with draggable stickers, the new notebook flow with live cover previews, and search across titles, handwriting, typed text, and transcripts.
+- `Library/`: `NavigationSplitView` with a folder tree in the sidebar, gallery and list layouts, pinning, multi-select, one-tap notes, the notebook flow with live cover previews, the document scanner, Recently Deleted (30 days, restores to the original folder), and search across titles, handwriting, typed text, imported documents, and transcripts, grouped by note.
 - `Editor/`: `EditorModel` owns the open note. `NoteCanvasController` is a single zoomable `PKCanvasView` spanning all pages. Page backgrounds are `CATiledLayer` views in an underlay scaled with the zoom, so they stay sharp. Elements live above the backgrounds and below the ink.
 - `Recording/`: `RecordingController` handles live recording and transcription, post-processing, playback with filler skipping, and ink replay.
-- `Settings/`: AI, model downloads, packs, app icons, and About.
+- `Settings/`: appearance (12 themes with light and dark palettes, System/Light/Dark, icon matching), writing and gesture options, AI, on-device models with download phases and enable switches, packs with install previews, and About.
+- `App/`: `AppModel` is shared by every window (library, packs). `SceneModel` is per window (the open note, alerts, imports), so iPad windows show different notes.
+- `Shared/Theme.swift`: `AppTheme` defines the palettes and is injected through the environment; `.tint` and `preferredColorScheme` follow it. Keep its cases in sync with `Scripts/render_icon.py` and `project.yml`.
 
 ## The canvas
 

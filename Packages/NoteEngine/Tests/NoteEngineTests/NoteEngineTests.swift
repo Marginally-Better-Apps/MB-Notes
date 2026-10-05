@@ -192,6 +192,78 @@ import Testing
         #expect(library.trashedItems().count == 1)
     }
 
+    @Test func newFilesResolveInsideNotesFoundByListing() throws {
+        // The temporary directory sits under /var, a symlink to /private/var, like an iOS
+        // app container. Listing returns /private/var URLs; new files must still resolve.
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("library-\(UUID().uuidString)", isDirectory: true)
+        let library = LibraryStore(root: root)
+        _ = try library.createNote(NoteManifest(title: "Bio", kind: .note, accentColor: "#000000", defaultPaper: PaperRef(template: "blank")), in: root)
+        let listed = try #require(library.contents(of: root).first)
+        let package = NotePackage(url: listed.url)
+        let audio = try #require(package.fileURL("recordings/\(UUID().uuidString).m4a"))
+        #expect(audio.deletingLastPathComponent().deletingLastPathComponent() == listed.url)
+        #expect(package.fileURL("../escape.txt") == nil)
+        #expect(package.fileURL("media/../../escape.txt") == nil)
+        #expect(package.fileURL("/etc/passwd") == nil)
+        #expect(package.fileURL("") == nil)
+    }
+
+    @Test func restoreReturnsItemsToWhereTheyWere() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("library-\(UUID().uuidString)", isDirectory: true)
+        let library = LibraryStore(root: root)
+        let folder = try library.createFolder(named: "Chem", in: root, metadata: FolderMetadata(color: "#000", symbol: "folder"))
+        let note = try library.createNote(NoteManifest(title: "Acids", kind: .note, accentColor: "#000000", defaultPaper: PaperRef(template: "blank")), in: folder)
+        try library.delete(note.url)
+        let trashed = try #require(library.trashedItems().first)
+        #expect(library.deletionInfo(for: trashed.url)?.originalFolder == "Chem")
+        let restored = try library.restore(trashed.url)
+        #expect(restored.deletingLastPathComponent().lastPathComponent == "Chem")
+        #expect(library.trashedItems().isEmpty)
+
+        // Restoring into a folder that no longer exists falls back to the library root.
+        let other = try library.createNote(NoteManifest(title: "Bases", kind: .note, accentColor: "#000000", defaultPaper: PaperRef(template: "blank")), in: folder)
+        try library.delete(other.url)
+        try library.delete(folder)
+        let orphan = try #require(library.trashedItems().first { $0.name == "Bases" })
+        let back = try library.restore(orphan.url)
+        #expect(back.deletingLastPathComponent().standardizedFileURL.resolvingSymlinksInPath() == root.standardizedFileURL.resolvingSymlinksInPath())
+    }
+
+    @Test func purgesItemsDeletedLongAgo() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("library-\(UUID().uuidString)", isDirectory: true)
+        let library = LibraryStore(root: root)
+        let note = try library.createNote(NoteManifest(title: "Old", kind: .note, accentColor: "#000000", defaultPaper: PaperRef(template: "blank")), in: root)
+        try library.delete(note.url)
+        library.purgeTrash(olderThan: 30, now: Date().addingTimeInterval(31 * 86_400))
+        #expect(library.trashedItems().isEmpty)
+    }
+
+    @Test func archivesRoundTrip() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("library-\(UUID().uuidString)", isDirectory: true)
+        let library = LibraryStore(root: root)
+        let note = try library.createNote(NoteManifest(title: "Shared", kind: .note, accentColor: "#000000", defaultPaper: PaperRef(template: "blank")), in: root)
+        try Data([1, 2, 3]).write(to: note.url.appendingPathComponent("recordings/a.m4a"))
+        let archive = try note.exportArchive()
+        #expect(archive.pathExtension == NotePackage.archiveExtension)
+        let imported = try NotePackage.importArchive(archive, into: root)
+        #expect(imported.url.lastPathComponent == "Shared 2.mbnote")
+        #expect(try imported.readManifest().title == "Shared")
+        #expect(FileManager.default.fileExists(atPath: imported.url.appendingPathComponent("recordings/a.m4a").path))
+        let light = try note.exportArchive(includeRecordings: false)
+        let lightImport = try NotePackage.importArchive(light, into: root)
+        #expect(!FileManager.default.fileExists(atPath: lightImport.url.appendingPathComponent("recordings/a.m4a").path))
+    }
+
+    @Test func pinningIsStoredInTheNote() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("library-\(UUID().uuidString)", isDirectory: true)
+        let library = LibraryStore(root: root)
+        let note = try library.createNote(NoteManifest(title: "Pinned", kind: .note, accentColor: "#000000", defaultPaper: PaperRef(template: "blank")), in: root)
+        try library.setPinned(true, for: note.url)
+        #expect(library.contents(of: root).first?.isPinned == true)
+        try library.setPinned(false, for: note.url)
+        #expect(library.contents(of: root).first?.isPinned == false)
+    }
+
     @Test func uniqueNamesAndSanitizing() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("library-\(UUID().uuidString)", isDirectory: true)
         let library = LibraryStore(root: root)

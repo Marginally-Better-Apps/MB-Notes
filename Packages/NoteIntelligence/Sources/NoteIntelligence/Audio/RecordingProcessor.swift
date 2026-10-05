@@ -35,6 +35,8 @@ public enum RecordingProcessor {
     ) async -> Transcript {
         var transcript = original
 
+        // Callers build `steps` from models that are downloaded and switched on, so each
+        // step only re-checks the files it needs.
         if steps.contains(.retranscribe), Voz.isDownloaded() {
             progress("Transcribing with Voz…")
             if let voz = try? await Voz(), let result = try? await voz.transcribe(audioURL), !result.words.isEmpty {
@@ -64,7 +66,7 @@ public enum RecordingProcessor {
             }
         }
 
-        if steps.contains(.cleanAudio) {
+        if steps.contains(.cleanAudio), Clear().isDownloaded() {
             progress("Cleaning up audio…")
             try? FileManager.default.removeItem(at: enhancedURL)
             _ = try? await Clear().enhance(path: audioURL.path, to: enhancedURL.path)

@@ -35,7 +35,6 @@
     "height": 52,
     "fontSize": 25.2,
     "weight": "heavy",
-    "design": "rounded",
     "align": "center",
     "color": "white",
     "style": "middle"
@@ -78,7 +77,6 @@
     "height": 52,
     "fontSize": 25.2,
     "weight": "heavy",
-    "design": "rounded",
     "align": "center",
     "color": "white",
     "style": "middle"
@@ -121,7 +119,6 @@
     "height": 52,
     "fontSize": 25.2,
     "weight": "heavy",
-    "design": "rounded",
     "align": "center",
     "color": "white",
     "style": "middle"
@@ -164,7 +161,6 @@
     "height": 52,
     "fontSize": 25.2,
     "weight": "heavy",
-    "design": "rounded",
     "align": "center",
     "color": "white",
     "style": "middle"
@@ -207,7 +203,6 @@
     "height": 52,
     "fontSize": 25.2,
     "weight": "heavy",
-    "design": "rounded",
     "align": "center",
     "color": "white",
     "style": "middle"
@@ -250,7 +245,6 @@
     "height": 52,
     "fontSize": 25.2,
     "weight": "heavy",
-    "design": "rounded",
     "align": "center",
     "color": "white",
     "style": "middle"
@@ -304,7 +298,6 @@
     "height": 80,
     "fontSize": 38,
     "weight": "black",
-    "design": "rounded",
     "align": "center",
     "color": "white",
     "style": "middle"
@@ -416,8 +409,8 @@
   ]
  },
  {
-  "id": "washi-sunset",
-  "name": "Sunset washi",
+  "id": "washi-violet",
+  "name": "Violet washi",
   "category": "Tape",
   "canvas": {
    "width": 220,
@@ -426,31 +419,21 @@
   "outlined": false,
   "layers": [
    {
-    "type": "gradient",
+    "type": "rect",
     "x": 0,
     "y": 4,
     "width": 220,
     "height": 42,
-    "colors": [
-     "#FFA678@0.85",
-     "#F76CA0@0.85",
-     "#8056F6@0.85"
-    ],
-    "angle": 0
+    "fill": "#6A45E0@0.6"
    },
    {
-    "type": "path",
-    "d": "M12 0c.8 6.5 4.7 10.9 12 12-7.3 1.1-11.2 5.5-12 12-.8-6.5-4.7-10.9-12-12C7.3 10.9 11.2 6.5 12 0z",
-    "viewBox": [
-     0,
-     0,
-     24,
-     24
-    ],
+    "type": "star",
     "x": 14,
     "y": 15,
     "width": 20,
     "height": 20,
+    "points": 4,
+    "innerRatio": 0.4,
     "fill": "white@0.8",
     "repeat": {
      "count": 6,

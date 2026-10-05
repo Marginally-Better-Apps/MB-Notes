@@ -71,8 +71,11 @@ public final class LocalMLXProvider: AIProvider, @unchecked Sendable {
         #else
         if let existing = lock.withLock({ container }) { return existing }
         let directory = ModelManager.localModelDirectory(repo)
-        guard FileManager.default.fileExists(atPath: directory.appendingPathComponent("config.json").path) else {
-            throw AIError.unavailable("Download \(displayName) in Settings › On-device models first.")
+        guard HuggingFaceDownloader.isComplete(directory) else {
+            throw AIError.unavailable("Download \(displayName) in Settings › On-Device Models first.")
+        }
+        guard await ModelManager.shared.isEnabled(.localLLM) else {
+            throw AIError.unavailable("\(displayName) is turned off in Settings › On-Device Models.")
         }
         let loaded = try await #huggingFaceLoadModelContainer(configuration: ModelConfiguration(directory: directory))
         lock.withLock { container = loaded }

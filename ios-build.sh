@@ -13,6 +13,7 @@ xcodebuild -quiet \
   -configuration Release -destination 'generic/platform=iOS' \
   -derivedDataPath "$DERIVED_DATA" \
   -skipMacroValidation -skipPackagePluginValidation \
+  COMPILATION_CACHE_ENABLE_CACHING=YES \
   CODE_SIGNING_ALLOWED=NO build
 
 APP="$DERIVED_DATA/Build/Products/Release-iphoneos/MBNotes.app"

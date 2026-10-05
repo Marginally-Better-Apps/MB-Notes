@@ -43,7 +43,7 @@ Biology.mbnote/
   recognition/<page-id>.json   handwriting recognized on that page
   media/<uuid>.png             inserted images
   sources/<uuid>.pdf           imported documents that pages draw on
-  recordings/<id>.m4a          audio (AAC, mono)
+  recordings/<id>.caf          audio (AAC, mono, in a crash-tolerant CAF container; older notes use .m4a)
   recordings/<id>.clear.m4a    optional cleaned-up audio
   recordings/<id>.json         transcript, speakers, filler words
   thumbnail.png                first page or cover, for previews
@@ -77,7 +77,9 @@ Biology.mbnote/
     }
   ],
   "tags": ["Biology & Life Sciences"],
-  "recordings": [{ "id": "…", "title": "Lecture 3", "startedAt": "…", "duration": 3012.4 }],
+  "recordings": [{ "id": "…", "title": "Lecture 3", "startedAt": "…", "duration": 3012.4,
+                   "audioFile": "recordings/<id>.caf", "inProgress": false,
+                   "pauses": [{ "start": 600.0, "end": 660.0 }] }],
   "embedded": { "papers": { "<ref>": { … } }, "covers": { … }, "stickers": { … } },
   "extensions": {}
 }
@@ -122,6 +124,12 @@ Exported PDFs draw these lines as invisible text over the ink, so the PDFs are s
 ```
 
 Hidden speakers are left out of the transcript view, search, and AI features.
+
+Recordings are listed in `document.json` from the moment they start, with `inProgress: true`, and the audio is written as it is captured. If the app is killed mid-lecture, the next open finds the in-progress entry, reads the duration from the file, and keeps it. `pauses` are wall-clock stretches (seconds after `startedAt`) when recording was paused; ink replay uses them to line up strokes with the audio. `audioFile` is absent in notes made before CAF audio, which means `recordings/<id>.m4a`.
+
+### Sharing
+
+A `.mbnote` is a folder, which AirDrop and Files handle but Mail and Messages cannot attach. Sharing as a file zips the folder into a `.mbnotes` archive (`com.marginallybetter.notes.archive`, conforming to `public.zip-archive`) with the `.mbnote` folder at its top level. Audio is stored uncompressed inside the zip. Opening a `.mbnotes` file unzips it into the library as a new note with a fresh `id`.
 
 ## Packs
 

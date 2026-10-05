@@ -2,193 +2,193 @@
  {
   "id": "emoji-star",
   "name": "Star",
-  "category": "Cute",
+  "category": "Symbols",
   "emoji": "⭐️"
  },
  {
   "id": "emoji-sparkles",
   "name": "Sparkles",
-  "category": "Cute",
+  "category": "Symbols",
   "emoji": "✨"
  },
  {
   "id": "emoji-blossom",
   "name": "Blossom",
-  "category": "Cute",
+  "category": "Nature",
   "emoji": "🌸"
  },
  {
   "id": "emoji-strawberry",
   "name": "Strawberry",
-  "category": "Cute",
+  "category": "Nature",
   "emoji": "🍓"
  },
  {
   "id": "emoji-rainbow",
   "name": "Rainbow",
-  "category": "Cute",
+  "category": "Nature",
   "emoji": "🌈"
  },
  {
   "id": "emoji-cloud",
   "name": "Cloud",
-  "category": "Cute",
+  "category": "Nature",
   "emoji": "☁️"
  },
  {
   "id": "emoji-sun",
   "name": "Sun",
-  "category": "Cute",
+  "category": "Nature",
   "emoji": "☀️"
  },
  {
   "id": "emoji-moon",
   "name": "Moon",
-  "category": "Cute",
+  "category": "Nature",
   "emoji": "🌙"
  },
  {
   "id": "emoji-cat",
   "name": "Cat",
-  "category": "Cute",
+  "category": "Nature",
   "emoji": "🐱"
  },
  {
   "id": "emoji-bear",
   "name": "Bear",
-  "category": "Cute",
+  "category": "Nature",
   "emoji": "🐻"
  },
  {
   "id": "emoji-frog",
   "name": "Frog",
-  "category": "Cute",
+  "category": "Nature",
   "emoji": "🐸"
  },
  {
   "id": "emoji-butterfly",
   "name": "Butterfly",
-  "category": "Cute",
+  "category": "Nature",
   "emoji": "🦋"
  },
  {
   "id": "emoji-clover",
   "name": "Clover",
-  "category": "Cute",
+  "category": "Nature",
   "emoji": "🍀"
  },
  {
   "id": "emoji-fire",
   "name": "Fire",
-  "category": "Cute",
+  "category": "Symbols",
   "emoji": "🔥"
  },
  {
   "id": "emoji-bulb",
   "name": "Idea",
-  "category": "Cute",
+  "category": "Symbols",
   "emoji": "💡"
  },
  {
   "id": "emoji-check",
   "name": "Done",
-  "category": "Cute",
+  "category": "Symbols",
   "emoji": "✅"
  },
  {
   "id": "emoji-heart",
   "name": "Heart",
-  "category": "Cute",
+  "category": "Symbols",
   "emoji": "❤️"
  },
  {
   "id": "emoji-bow",
   "name": "Bow",
-  "category": "Cute",
+  "category": "Symbols",
   "emoji": "🎀"
  },
  {
   "id": "emoji-pin",
   "name": "Pin",
-  "category": "Cute",
+  "category": "Symbols",
   "emoji": "📌"
  },
  {
   "id": "emoji-test-tube",
   "name": "Test tube",
-  "category": "Cute",
+  "category": "School",
   "emoji": "🧪"
  },
  {
   "id": "emoji-dna",
   "name": "DNA",
-  "category": "Cute",
+  "category": "School",
   "emoji": "🧬"
  },
  {
   "id": "emoji-ruler",
   "name": "Ruler",
-  "category": "Cute",
+  "category": "School",
   "emoji": "📐"
  },
  {
   "id": "emoji-music",
   "name": "Music",
-  "category": "Cute",
+  "category": "School",
   "emoji": "🎵"
  },
  {
   "id": "emoji-tea",
   "name": "Tea",
-  "category": "Cute",
+  "category": "School",
   "emoji": "🍵"
  },
  {
   "id": "emoji-brain",
   "name": "Brain",
-  "category": "Cute",
+  "category": "School",
   "emoji": "🧠"
  },
  {
   "id": "emoji-trophy",
   "name": "Trophy",
-  "category": "Cute",
+  "category": "Symbols",
   "emoji": "🏆"
  },
  {
   "id": "emoji-target",
   "name": "Target",
-  "category": "Cute",
+  "category": "Symbols",
   "emoji": "🎯"
  },
  {
   "id": "emoji-books",
   "name": "Books",
-  "category": "Cute",
+  "category": "School",
   "emoji": "📚"
  },
  {
   "id": "emoji-pencil",
   "name": "Pencil",
-  "category": "Cute",
+  "category": "School",
   "emoji": "✏️"
  },
  {
   "id": "emoji-rocket",
   "name": "Rocket",
-  "category": "Cute",
+  "category": "School",
   "emoji": "🚀"
  },
  {
   "id": "emoji-globe",
   "name": "Globe",
-  "category": "Cute",
+  "category": "School",
   "emoji": "🌍"
  },
  {
   "id": "emoji-hundred",
   "name": "100",
-  "category": "Cute",
+  "category": "Symbols",
   "emoji": "💯"
  }
 ]

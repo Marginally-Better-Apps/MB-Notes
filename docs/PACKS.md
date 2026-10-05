@@ -2,7 +2,7 @@
 
 MB Notes is a note engine plus content. Every paper, notebook cover, sticker, color palette, and folder icon in the app comes from a **pack**, including the built-in ones. The built-in pack, [`MBNotes/Resources/Packs/core.mbpack`](../MBNotes/Resources/Packs/core.mbpack), uses exactly the format described here, so it is the best example to copy from.
 
-Packs are data, not code. They hold JSON and images, so installing one is safe.
+Packs are data, not code: JSON and images. MB Notes checks a pack and shows you what is inside before installing it, but only install packs from people you trust.
 
 ## Quick start
 
@@ -10,7 +10,7 @@ Packs are data, not code. They hold JSON and images, so installing one is safe.
 2. Change `id` in `pack.json` to something unique, using reverse-DNS such as `io.github.yourname.cozy`.
 3. Edit or add papers, covers, and stickers.
 4. Zip the folder and rename the archive to end in `.mbpack`.
-5. AirDrop the archive to your iPad, or open it from Files or Safari. MB Notes installs it. You can also use **Packs › +** inside the app.
+5. AirDrop the archive to your iPad, or open it from Files or Safari. MB Notes previews it and asks before installing. You can also use **Settings › Packs › Add**, drop a pack onto the Packs screen on iPad, or paste a link. A link of the form `mbnotes://install?url=https://example.com/cozy.mbpack` opens straight into the preview, which is handy for a README button.
 
 To share a pack, open **Packs**, swipe left on it, and choose **Share**.
 
@@ -45,6 +45,8 @@ my-pack.mbpack/
   "symbolSets": [{ "id": "cafe", "name": "Café", "symbols": ["cup.and.saucer.fill", "birthday.cake.fill"] }]
 }
 ```
+
+`symbolSets` list SF Symbol names offered as folder icons. They are drawn by the system as interface glyphs, which Apple's license allows; they cannot be used as stickers or in artwork.
 
 Each list can contain inline objects, paths to JSON files, or both. A path can point to a file that holds one item or an array of items. Paths are relative to the pack and cannot leave it.
 
@@ -122,9 +124,9 @@ Every layer accepts `opacity`, `rotation` (degrees, around its box), and `repeat
 | `rect` | Rectangle | `x y width height`, `fill`, `stroke`, `lineWidth`, `cornerRadius`, `dash` |
 | `ellipse` | Ellipse | `x y width height`, `fill`, `stroke`, `lineWidth` |
 | `line` | Segment | `x1 y1 x2 y2`, `color`, `lineWidth`, `dash` |
+| `star` | Star or regular polygon | `points` (default 5), `innerRatio` (default 0.5; use 1 for a polygon), box, `fill`, `stroke` |
 | `path` | SVG path data | `d`, `viewBox` `[x, y, w, h]`, box, `fill`, `stroke`, `lineWidth` |
 | `text` | Text | `text`, box, `fontSize`, `weight`, `design`, `align`, `color`, `style: "middle"` to center vertically |
-| `symbol` | SF Symbol | `symbol`, box, `color` |
 | `image` | PNG or JPEG | `src`, box, `style: "fill"` to crop instead of fit |
 | `pdf` | A PDF page | `src`, `page` (0-based), box |
 
@@ -158,7 +160,6 @@ A sticker uses exactly one kind of art:
 ```json
 [
   { "id": "latte", "name": "Latte", "category": "Café", "emoji": "☕️" },
-  { "id": "bean", "name": "Bean", "category": "Café", "symbol": "leaf.fill", "tint": "#6F4E37" },
   { "id": "croissant", "name": "Croissant", "category": "Café", "image": "images/croissant.png" },
   { "id": "badge", "name": "Open", "category": "Café", "canvas": { "width": 160, "height": 70 },
     "layers": [ { "type": "rect", "x": 4, "y": 4, "width": 152, "height": 62, "cornerRadius": 31, "fill": "#6F4E37" },
@@ -166,13 +167,19 @@ A sticker uses exactly one kind of art:
 ]
 ```
 
-Symbol stickers get a white die-cut border unless you set `"outlined": false`. For image stickers, use transparent PNGs, about 512 pixels on the long side.
+Add `"tags": ["coffee", "breakfast"]` to help search find a sticker. Layer stickers get a white die-cut border unless you set `"outlined": false`. For image stickers, use transparent PNGs, about 512 pixels on the long side. Emoji stickers store only the character; the device draws it, so they stay crisp and need no artwork.
+
+Every emoji is already available as a sticker in the editor's picker, so emoji entries in a pack are best used for curated sets.
 
 ## Testing your pack
 
 - Install the pack and open **Packs**. If anything fails to load, the error appears under **Couldn't load**, naming the file and the JSON path that's wrong.
 - From the repository, `swift test` in `Packages/NoteEngine` validates the core pack. To render every paper and cover of the core pack to PNGs, set `MBNOTES_PREVIEW_DIR=/tmp/previews`.
 
-## Licensing
+## Rights and responsibility
 
-Say how others may use your pack in `license`. CC0 or CC BY works well for art. The core pack is CC0.
+By publishing a pack you confirm that you created everything in it, or have the right to share it under the license you name in `pack.json`. You are responsible for your pack's content and its licensing. MB Notes and its contributors don't review, host, or endorse third-party packs and aren't responsible for them.
+
+Don't include artwork you don't own: no screenshots of other apps' stickers, no brand logos, and no fonts or icon sets whose licenses forbid redistribution. Apple's SF Symbols and emoji artwork can't go in packs; use `emoji` characters, which the system draws. Use an SPDX id in `license` (`CC0-1.0`, `CC-BY-4.0`), and put a `LICENSE` file and any credits in the pack folder.
+
+The core pack is CC0, and everything in it was made for MB Notes.

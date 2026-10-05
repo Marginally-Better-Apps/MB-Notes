@@ -18,47 +18,52 @@ public enum OnDeviceModel: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .shapes: return "Shapes"
         case .voz: return "Voz"
-        case .diarizer: return "Speaker labels"
+        case .diarizer: return "Speaker Labels"
         case .uhm: return "Uhm"
         case .clear: return "Clear"
         case .gist: return "Gist"
         case .title: return "Title"
-        case .localLLM: return "Local language model"
+        case .localLLM: return "Local Language Model"
         }
     }
 
     public var purpose: String {
         switch self {
-        case .shapes: return "Turns hand-drawn rectangles, circles, triangles, stars, and lines into clean shapes."
-        case .voz: return "High-accuracy transcription for recordings in 25 languages, about 300 times faster than real time."
+        case .shapes: return "Recognizes hand-drawn rectangles, circles, triangles, stars, and lines as a backup to the built-in shape fitter."
+        case .voz: return "High-accuracy transcription for recordings in 25 languages."
         case .diarizer: return "Works out who is speaking when, so you can label and hide speakers."
         case .uhm: return "Finds um, uh, and hmm in recordings so playback can skip them."
         case .clear: return "Removes background noise and echo from lecture recordings."
         case .gist: return "Suggests topic tags for notes, used for organization and search."
         case .title: return "Suggests a short title and description for untitled notes and recordings."
-        case .localLLM: return "A small Hugging Face model for summaries and questions without the internet. Loads only while it works."
+        case .localLLM: return "Summaries and questions without the internet. Loads only while it works."
         }
     }
 
     public var vendor: String {
         switch self {
-        case .diarizer: return "FluidAudio (pyannote community-1)"
-        case .localLLM: return "Hugging Face via MLX"
+        case .diarizer: return "FluidAudio · pyannote community-1"
+        case .localLLM: return "Hugging Face · MLX"
         default: return "Desert Ant Labs"
         }
     }
 
-    public var approximateSize: String {
+    /// Rough download size, for the card and for turning fractions into bytes.
+    public var approximateBytes: Int64 {
         switch self {
-        case .shapes: return "0.2 MB"
-        case .voz: return "467 MB"
-        case .diarizer: return "About 30 MB"
-        case .uhm: return "45 MB"
-        case .clear: return "9 MB"
-        case .gist: return "15 MB"
-        case .title: return "About 280 MB"
-        case .localLLM: return "Depends on the model"
+        case .shapes: return 200_000
+        case .voz: return 467_000_000
+        case .diarizer: return 30_000_000
+        case .uhm: return 45_000_000
+        case .clear: return 9_000_000
+        case .gist: return 15_000_000
+        case .title: return 280_000_000
+        case .localLLM: return 0
         }
+    }
+
+    public var approximateSize: String {
+        approximateBytes == 0 ? "Depends on the model" : ByteCountFormatter.string(fromByteCount: approximateBytes, countStyle: .file)
     }
 
     /// Small models download quietly the first time a feature needs them.
@@ -75,30 +80,35 @@ public enum OnDeviceModel: String, CaseIterable, Identifiable, Sendable {
         case .voz: return "waveform"
         case .diarizer: return "person.2.wave.2"
         case .uhm: return "scissors"
-        case .clear: return "wand.and.stars"
+        case .clear: return "wand.and.sparkles"
         case .gist: return "tag"
         case .title: return "textformat"
         case .localLLM: return "cpu"
         }
     }
 
-    /// Hugging Face repository the weights come from.
-    var desertAntRepo: String? {
-        switch self {
-        case .diarizer, .localLLM: return nil
-        default: return "desert-ant-labs/\(rawValue)"
-        }
-    }
+    /// Needs the Neural Engine or Metal, so it cannot run in the simulator.
+    var needsDevice: Bool { self == .title || self == .localLLM }
 }
 
-public enum ModelStatus: Equatable, Sendable {
+/// Where a model is in its life, with enough detail to show what is happening.
+public enum ModelPhase: Equatable, Sendable {
     case notDownloaded
-    case downloading(Double)
+    case downloading(received: Int64, total: Int64?, bytesPerSecond: Double?)
+    case verifying
+    /// Building the runtime (Core ML specialization, MLX loading). Can take tens of seconds with no progress.
+    case preparing(String)
     case ready
     case failed(String)
     case unavailable(String)
 
     public var isReady: Bool { self == .ready }
+    public var isBusy: Bool {
+        switch self {
+        case .downloading, .verifying, .preparing: return true
+        default: return false
+        }
+    }
 }
 
 /// Small open models offered for on-device summaries. Any MLX repo id also works.
@@ -117,82 +127,129 @@ public struct LocalModelPreset: Identifiable, Hashable, Sendable {
     ]
 }
 
-/// Tracks, downloads, and deletes on-device models.
+/// Tracks, downloads, enables, and deletes on-device models.
 @MainActor
 @Observable
 public final class ModelManager {
     public static let shared = ModelManager()
 
-    public private(set) var statuses: [OnDeviceModel: ModelStatus] = [:]
+    public private(set) var phases: [OnDeviceModel: ModelPhase] = [:]
+    /// Per-model enabled flags; a disabled model stays on disk but features skip it.
+    private var enabled: [OnDeviceModel: Bool] = [:]
     private var tasks: [OnDeviceModel: Task<Void, Never>] = [:]
+    /// Increments per download so a cancelled task cannot overwrite a newer one's phase.
+    private var generations: [OnDeviceModel: Int] = [:]
+    /// Shared recognizer so the editor and Settings see the same download.
+    public let shapes = Shapes()
 
     /// The Hugging Face repo used for `.localLLM`.
     public var localModelID: String {
-        didSet { UserDefaults.standard.set(localModelID, forKey: "localModelID"); refresh() }
+        didSet {
+            UserDefaults.standard.set(localModelID, forKey: "localModelID")
+            refresh()
+        }
     }
 
     private init() {
         localModelID = UserDefaults.standard.string(forKey: "localModelID") ?? LocalModelPreset.all[0].id
+        for model in OnDeviceModel.allCases {
+            enabled[model] = UserDefaults.standard.object(forKey: "model.enabled.\(model.rawValue)") as? Bool ?? true
+            #if targetEnvironment(simulator)
+            if model.needsDevice { phases[model] = .unavailable("Runs on a real iPhone or iPad only.") }
+            #endif
+        }
         refresh()
     }
 
-    public func status(_ model: OnDeviceModel) -> ModelStatus {
-        statuses[model] ?? .notDownloaded
+    public func phase(_ model: OnDeviceModel) -> ModelPhase {
+        phases[model] ?? .notDownloaded
     }
 
+    public func isEnabled(_ model: OnDeviceModel) -> Bool {
+        enabled[model] ?? true
+    }
+
+    /// Downloaded and switched on.
+    public func isUsable(_ model: OnDeviceModel) -> Bool {
+        isEnabled(model) && phase(model).isReady
+    }
+
+    public func setEnabled(_ model: OnDeviceModel, _ value: Bool) {
+        enabled[model] = value
+        UserDefaults.standard.set(value, forKey: "model.enabled.\(model.rawValue)")
+        if !value { cancel(model) }
+    }
+
+    /// Re-checks what is on disk, off the main thread since it hashes files.
     public func refresh() {
-        for model in OnDeviceModel.allCases {
-            if case .downloading = statuses[model] { continue }
-            statuses[model] = isOnDisk(model) ? .ready : .notDownloaded
+        let localID = localModelID
+        Task.detached(priority: .utility) { [weak self] in
+            var present: [OnDeviceModel: Bool] = [:]
+            for model in OnDeviceModel.allCases { present[model] = Self.isOnDisk(model, localModelID: localID) }
+            await self?.applyRefresh(present)
         }
-        #if targetEnvironment(simulator)
-        // MLX needs a real GPU; the simulator cannot run it.
-        statuses[.localLLM] = .unavailable("Runs on a real iPhone or iPad only.")
-        statuses[.title] = .unavailable("Runs on a real iPhone or iPad only.")
-        #endif
     }
 
-    func isOnDisk(_ model: OnDeviceModel) -> Bool {
+    private func applyRefresh(_ present: [OnDeviceModel: Bool]) {
+        for model in OnDeviceModel.allCases {
+            if phase(model).isBusy { continue }
+            if case .unavailable = phase(model) { continue }
+            phases[model] = present[model] == true ? .ready : .notDownloaded
+        }
+    }
+
+    nonisolated static func isOnDisk(_ model: OnDeviceModel, localModelID: String) -> Bool {
         switch model {
         case .shapes: return Shapes().isDownloaded()
         case .voz: return Voz.isDownloaded()
         case .clear: return Clear().isDownloaded()
         case .uhm: return Uhm().isDownloaded()
         case .gist: return Gist(variant: .english).isDownloaded()
-        case .title: return FileManager.default.fileExists(atPath: Self.titleDirectory.appendingPathComponent("config.json").path)
-        case .diarizer: return Self.directoryHasFiles(Self.diarizerDirectory)
-        case .localLLM: return FileManager.default.fileExists(atPath: Self.localModelDirectory(localModelID).appendingPathComponent("config.json").path)
+        case .title: return HuggingFaceDownloader.isComplete(titleDirectory)
+        case .diarizer: return directoryHasFiles(diarizerDirectory)
+        case .localLLM: return HuggingFaceDownloader.isComplete(localModelDirectory(localModelID))
         }
     }
 
+    // MARK: Downloading
+
     public func download(_ model: OnDeviceModel) {
-        guard tasks[model] == nil, status(model) != .ready else { return }
-        if case .unavailable = status(model) { return }
-        statuses[model] = .downloading(0)
-        let report: @Sendable (Double) -> Void = { [weak self] fraction in
+        guard tasks[model] == nil, !phase(model).isReady else { return }
+        if case .unavailable = phase(model) { return }
+        let generation = (generations[model] ?? 0) + 1
+        generations[model] = generation
+        phases[model] = .downloading(received: 0, total: model.approximateBytes > 0 ? model.approximateBytes : nil, bytesPerSecond: nil)
+        let reporter = ProgressReporter(model: model) { [weak self] phase in
             Task { @MainActor in
-                guard let self, case .downloading = self.statuses[model] else { return }
-                self.statuses[model] = .downloading(fraction)
+                guard let self, self.generations[model] == generation, self.phase(model).isBusy else { return }
+                self.phases[model] = phase
             }
         }
         let localID = localModelID
+        let shapes = shapes
         tasks[model] = Task { [weak self] in
             do {
-                try await Self.performDownload(model, localModelID: localID, progress: report)
-                self?.statuses[model] = .ready
-            } catch is CancellationError {
-                self?.statuses[model] = .notDownloaded
+                try await Self.performDownload(model, localModelID: localID, shapes: shapes, reporter: reporter)
+                guard let self, self.generations[model] == generation else { return }
+                self.phases[model] = .ready
             } catch {
-                self?.statuses[model] = .failed(error.localizedDescription)
+                guard let self, self.generations[model] == generation else { return }
+                if error is CancellationError || (error as? URLError)?.code == .cancelled {
+                    self.phases[model] = .notDownloaded
+                } else {
+                    self.phases[model] = .failed(error.localizedDescription)
+                }
             }
-            self?.tasks[model] = nil
+            if self?.generations[model] == generation { self?.tasks[model] = nil }
         }
     }
 
     public func cancel(_ model: OnDeviceModel) {
-        tasks[model]?.cancel()
+        guard let task = tasks[model] else { return }
+        task.cancel()
         tasks[model] = nil
-        statuses[model] = .notDownloaded
+        generations[model] = (generations[model] ?? 0) + 1
+        if phase(model).isBusy { phases[model] = .notDownloaded }
     }
 
     public func delete(_ model: OnDeviceModel) {
@@ -200,7 +257,7 @@ public final class ModelManager {
         for url in Self.storageLocations(for: model, localModelID: localModelID) {
             try? FileManager.default.removeItem(at: url)
         }
-        refresh()
+        phases[model] = .notDownloaded
     }
 
     /// Bytes on disk for a model, for the settings screen.
@@ -208,20 +265,21 @@ public final class ModelManager {
         Self.storageLocations(for: model, localModelID: localModelID).reduce(0) { $0 + ModelStorage.size(of: $1) }
     }
 
-    /// Downloads a model if it is small and missing, for features that want it quietly.
+    /// Downloads a model if it is small, missing, and switched on.
     public func ensureSmallModel(_ model: OnDeviceModel) {
-        if model.downloadsAutomatically, status(model) == .notDownloaded { download(model) }
+        guard isEnabled(model), model.downloadsAutomatically, phase(model) == .notDownloaded else { return }
+        download(model)
     }
 
     // MARK: Storage
+
+    nonisolated static var titleDirectory: URL { ModelStorage.directory("title") }
+    nonisolated static var diarizerDirectory: URL { ModelStorage.directory("diarizer") }
 
     nonisolated static func desertAntCache(for model: OnDeviceModel) -> URL {
         let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
         return caches.appendingPathComponent("desert-ant-models/desert-ant-labs/\(model.rawValue)", isDirectory: true)
     }
-
-    nonisolated static var titleDirectory: URL { ModelStorage.directory("title") }
-    nonisolated static var diarizerDirectory: URL { ModelStorage.directory("diarizer") }
 
     nonisolated static func localModelDirectory(_ repo: String) -> URL {
         ModelStorage.directory("llm").appendingPathComponent(repo.replacingOccurrences(of: "/", with: "--"), isDirectory: true)
@@ -241,23 +299,90 @@ public final class ModelManager {
         return enumerator.nextObject() != nil
     }
 
-    nonisolated static func performDownload(_ model: OnDeviceModel, localModelID: String, progress: @Sendable @escaping (Double) -> Void) async throws {
+    nonisolated static func performDownload(_ model: OnDeviceModel, localModelID: String, shapes: Shapes, reporter: ProgressReporter) async throws {
         switch model {
-        case .shapes: try await Shapes().download(progress: progress)
-        case .clear: try await Clear().download(progress: progress)
-        case .uhm: try await Uhm().download(progress: progress)
-        case .gist: try await Gist(variant: .english).download(progress: progress)
-        case .voz: _ = try await Voz.download(progress: { progress($0.fraction) })
+        case .shapes:
+            try await shapes.download(progress: reporter.fraction)
+            reporter.preparing("Optimizing for this device…")
+        case .clear:
+            try await Clear().load { progress in
+                switch progress.phase {
+                case .downloading: reporter.fraction(progress.fraction)
+                case .preparing: reporter.preparing("Optimizing for this device…")
+                }
+            }
+        case .uhm:
+            try await Uhm().download(progress: reporter.fraction)
+            reporter.preparing("Optimizing for this device…")
+        case .gist:
+            try await Gist(variant: .english).download(progress: reporter.fraction)
+            reporter.preparing("Optimizing for this device…")
+        case .voz:
+            _ = try await Voz.download { reporter.bytes($0.completedBytes, total: $0.totalBytes) }
+            // The first load specializes the model for the Neural Engine, which takes a while.
+            reporter.preparing("Optimizing for this device (about 20 seconds, one time)…")
+            _ = try await Voz()
         case .title:
-            let files = TitleModel.files.values.first ?? []
-            try await HuggingFaceDownloader().download(repo: TitleModel.repo, revision: TitleModel.revision, files: files, to: titleDirectory, progress: progress)
+            let files = TitleModel.files[.apple] ?? []
+            try await HuggingFaceDownloader().download(repo: TitleModel.repo, revision: TitleModel.revision, files: files, to: titleDirectory, progress: reporter.bytes)
         case .diarizer:
             let manager = OfflineDiarizerManager(config: .default)
-            progress(0.1)
+            reporter.preparing("Downloading speaker models…")
             try await manager.prepareModels(directory: diarizerDirectory)
+            reporter.preparing("Compiling speaker models…")
         case .localLLM:
-            try await HuggingFaceDownloader().download(repo: localModelID, to: localModelDirectory(localModelID), progress: progress)
+            try await HuggingFaceDownloader().download(repo: localModelID, to: localModelDirectory(localModelID), progress: reporter.bytes)
         }
-        progress(1)
+        try Task.checkCancellation()
+    }
+}
+
+/// Turns raw progress callbacks into `ModelPhase`s with a throttled rate estimate.
+final class ProgressReporter: @unchecked Sendable {
+    private let model: OnDeviceModel
+    private let send: @Sendable (ModelPhase) -> Void
+    private let lock = NSLock()
+    private var lastBytes: Int64 = 0
+    private var lastTime = Date()
+    private var rate: Double?
+    private var lastSent = Date.distantPast
+
+    init(model: OnDeviceModel, send: @escaping @Sendable (ModelPhase) -> Void) {
+        self.model = model
+        self.send = send
+    }
+
+    /// A 0...1 fraction from SDKs that do not report bytes. 1 means the bytes are in and
+    /// the runtime is being built, which the SDK reports no progress for.
+    @Sendable func fraction(_ value: Double) {
+        if value >= 1 {
+            preparing("Optimizing for this device…")
+        } else {
+            let total = model.approximateBytes
+            bytes(Int64(value * Double(total)), total: total)
+        }
+    }
+
+    @Sendable func bytes(_ received: Int64, total: Int64?) {
+        let now = Date()
+        lock.lock()
+        let elapsed = now.timeIntervalSince(lastTime)
+        if elapsed >= 0.5 {
+            let instant = Double(received - lastBytes) / elapsed
+            rate = rate.map { $0 * 0.6 + instant * 0.4 } ?? instant
+            lastBytes = received
+            lastTime = now
+        }
+        // About four updates a second is plenty for a progress bar.
+        let shouldSend = now.timeIntervalSince(lastSent) >= 0.25 || (total != nil && received >= total!)
+        if shouldSend { lastSent = now }
+        let rate = self.rate
+        lock.unlock()
+        guard shouldSend else { return }
+        send(.downloading(received: received, total: total.flatMap { $0 > 0 ? $0 : nil }, bytesPerSecond: rate.map { max(0, $0) }))
+    }
+
+    @Sendable func preparing(_ message: String) {
+        send(.preparing(message))
     }
 }

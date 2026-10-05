@@ -4,31 +4,128 @@
   "name": "Cozy Café",
   "version": "1.0.0",
   "author": "MB Notes contributors",
-  "description": "An example community pack: warm paper, a café cover, and coffee stickers, including an image sticker.",
+  "description": "An example community pack: warm paper, a café cover, and coffee stickers, including an image sticker rendered by Scripts/render_example_assets.py.",
   "license": "CC0-1.0",
   "minimumEngineVersion": "1.0",
-  "papers": ["papers/cafe.json"],
+  "papers": [
+    "papers/cafe.json"
+  ],
   "covers": [
     {
-      "id": "cafe", "name": "Café", "defaultColor": "#6F4E37",
+      "id": "cafe",
+      "name": "Café",
+      "defaultColor": "#6F4E37",
       "layers": [
-        { "type": "dots", "spacing": 24, "radius": 3, "color": "white@0.18" },
-        { "type": "rect", "x": 50, "y": 120, "width": 200, "height": 96, "cornerRadius": 14, "fill": "#FFF8EE" },
-        { "type": "text", "text": "{{title}}", "x": 60, "y": 124, "width": 180, "height": 70, "fontSize": 22, "weight": "bold", "design": "serif", "align": "center", "color": "accentDark", "style": "middle" },
-        { "type": "image", "src": "images/croissant.png", "x": 190, "y": 290, "width": 90, "height": 90 }
+        {
+          "type": "dots",
+          "spacing": 24,
+          "radius": 3,
+          "color": "white@0.18"
+        },
+        {
+          "type": "rect",
+          "x": 50,
+          "y": 120,
+          "width": 200,
+          "height": 96,
+          "cornerRadius": 14,
+          "fill": "#FFF8EE"
+        },
+        {
+          "type": "text",
+          "text": "{{title}}",
+          "x": 60,
+          "y": 124,
+          "width": 180,
+          "height": 70,
+          "fontSize": 22,
+          "weight": "bold",
+          "design": "serif",
+          "align": "center",
+          "color": "accentDark",
+          "style": "middle"
+        },
+        {
+          "type": "image",
+          "src": "images/croissant.png",
+          "x": 190,
+          "y": 290,
+          "width": 90,
+          "height": 90
+        }
       ]
     }
   ],
   "stickers": [
-    { "id": "latte", "name": "Latte", "category": "Café", "emoji": "☕️" },
-    { "id": "cake", "name": "Cake", "category": "Café", "symbol": "birthday.cake.fill", "tint": "#E58FA8" },
-    { "id": "croissant", "name": "Croissant", "category": "Café", "image": "images/croissant.png" },
-    { "id": "open", "name": "Open sign", "category": "Café", "canvas": { "width": 160, "height": 70 },
+    {
+      "id": "latte",
+      "name": "Latte",
+      "category": "Café",
+      "emoji": "☕️"
+    },
+    {
+      "id": "croissant",
+      "name": "Croissant",
+      "category": "Café",
+      "image": "images/croissant.png"
+    },
+    {
+      "id": "open",
+      "name": "Open sign",
+      "category": "Café",
+      "canvas": {
+        "width": 160,
+        "height": 70
+      },
       "layers": [
-        { "type": "rect", "x": 4, "y": 4, "width": 152, "height": 62, "cornerRadius": 31, "fill": "#6F4E37" },
-        { "type": "text", "text": "OPEN", "x": 4, "y": 4, "width": 152, "height": 62, "fontSize": 26, "weight": "heavy", "align": "center", "color": "white", "style": "middle" }
-      ] }
+        {
+          "type": "rect",
+          "x": 4,
+          "y": 4,
+          "width": 152,
+          "height": 62,
+          "cornerRadius": 31,
+          "fill": "#6F4E37"
+        },
+        {
+          "type": "text",
+          "text": "OPEN",
+          "x": 4,
+          "y": 4,
+          "width": 152,
+          "height": 62,
+          "fontSize": 26,
+          "weight": "heavy",
+          "align": "center",
+          "color": "white",
+          "style": "middle"
+        }
+      ]
+    }
   ],
-  "palettes": [ { "id": "latte", "name": "Latte", "colors": ["#6F4E37", "#A47551", "#C8A27A", "#E8D5B9", "#F3E5D0"] } ],
-  "symbolSets": [ { "id": "cafe", "name": "Café", "symbols": ["cup.and.saucer.fill", "birthday.cake.fill", "mug.fill", "takeoutbag.and.cup.and.straw.fill"] } ]
+  "palettes": [
+    {
+      "id": "latte",
+      "name": "Latte",
+      "colors": [
+        "#6F4E37",
+        "#A47551",
+        "#C8A27A",
+        "#E8D5B9",
+        "#F3E5D0"
+      ]
+    }
+  ],
+  "symbolSets": [
+    {
+      "id": "cafe",
+      "name": "Café",
+      "symbols": [
+        "cup.and.saucer.fill",
+        "birthday.cake.fill",
+        "mug.fill",
+        "takeoutbag.and.cup.and.straw.fill"
+      ]
+    }
+  ]
 }

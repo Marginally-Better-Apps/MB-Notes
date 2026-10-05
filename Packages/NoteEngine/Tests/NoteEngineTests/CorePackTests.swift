@@ -21,11 +21,22 @@ import UniformTypeIdentifiers
         #expect(!pack.covers.isEmpty && !pack.stickers.isEmpty && !pack.palettes.isEmpty)
         #expect(Set(pack.papers.map(\.id)).count == pack.papers.count, "paper ids must be unique")
         #expect(Set(pack.stickers.map(\.id)).count == pack.stickers.count, "sticker ids must be unique")
-        let knownTypes: Set<String> = ["fill", "gradient", "hlines", "vlines", "grid", "dots", "isometric", "staff", "rect", "ellipse", "line", "path", "text", "symbol", "image", "pdf"]
+        let knownTypes: Set<String> = ["fill", "gradient", "hlines", "vlines", "grid", "dots", "isometric", "staff", "rect", "ellipse", "line", "path", "text", "star", "image", "pdf"]
         let layers = pack.papers.flatMap(\.layers) + pack.covers.flatMap(\.layers) + pack.stickers.flatMap { $0.layers ?? [] }
         for layer in layers {
             #expect(knownTypes.contains(layer.type), "unknown layer type \(layer.type)")
         }
+        // Everything built in was made for MB Notes; nothing borrows third-party art.
+        #expect(pack.stickers.allSatisfy { $0.emoji != nil || $0.layers != nil }, "core stickers are emoji or vector layers only")
+        #expect(pack.manifest.license == "CC0-1.0")
+        #expect(FileManager.default.fileExists(atPath: Self.packURL.appendingPathComponent("LICENSE").path))
+    }
+
+    @Test func starPathHasOnePointPerVertex() {
+        let star = TemplateRenderer.starPath(in: CGRect(x: 0, y: 0, width: 100, height: 100), points: 5, innerRatio: 0.5)
+        #expect(star.boundingBox.minY == 0)
+        let hexagon = TemplateRenderer.starPath(in: CGRect(x: 0, y: 0, width: 100, height: 100), points: 6, innerRatio: 1)
+        #expect(abs(hexagon.boundingBox.width - 86.6) < 0.1)
     }
 
     @Test func renderPreviews() throws {

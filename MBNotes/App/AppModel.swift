@@ -3,7 +3,8 @@ import Observation
 import SwiftUI
 import UIKit
 
-/// App-wide state: the library on disk, installed packs, and which note is open.
+/// State shared by every window: the library on disk and installed packs.
+/// Per-window state (the open note, alerts) lives in `SceneModel`.
 @MainActor
 @Observable
 final class AppModel {
@@ -12,20 +13,6 @@ final class AppModel {
     private(set) var catalog: PackCatalog = .empty
     /// Bumped whenever the library changes on disk so grids reload.
     private(set) var libraryVersion = 0
-    var openNote: OpenNote?
-    var alert: AppAlert?
-    var isImporting = false
-
-    struct OpenNote: Identifiable {
-        let package: NotePackage
-        var id: URL { package.url }
-    }
-
-    struct AppAlert: Identifiable {
-        let id = UUID()
-        let title: String
-        let message: String
-    }
 
     init() {
         let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
@@ -36,12 +23,7 @@ final class AppModel {
         )
         reloadPacks()
         seedLibraryIfNeeded()
-        #if DEBUG
-        // Screenshot and test hook: `-openFirstNote` opens the newest note on launch.
-        if ProcessInfo.processInfo.arguments.contains("-openFirstNote"), let first = library.allNotes().first {
-            openNote = OpenNote(package: NotePackage(url: first.url))
-        }
-        #endif
+        library.purgeTrash()
     }
 
     func reloadPacks() {
@@ -50,10 +32,6 @@ final class AppModel {
 
     func refreshLibrary() {
         libraryVersion += 1
-    }
-
-    func show(_ error: Error, title: String = "Something went wrong") {
-        alert = AppAlert(title: title, message: error.localizedDescription)
     }
 
     // MARK: Preferences
@@ -66,72 +44,87 @@ final class AppModel {
         }
     }
 
+    /// The paper used for one-tap notes; the last paper chosen in the editor or a new notebook.
+    var preferredPaper: PaperRef {
+        get {
+            if let raw = UserDefaults.standard.string(forKey: "preferredPaper"), let ref = ContentRef(rawValue: raw), catalog.paper(ref) != nil {
+                return PaperRef(template: ref)
+            }
+            return PaperRef(template: ContentRef(packID: CorePack.id, itemID: "lined"))
+        }
+        set { UserDefaults.standard.set(newValue.template.rawValue, forKey: "preferredPaper") }
+    }
+
     // MARK: Creating things
 
+    /// Cycles through the curated item colors so new folders and notebooks vary.
     func nextAccent() -> String {
-        let count = library.allNotes().count + library.allFolders().count
-        return Brand.accentHexes[count % Brand.accentHexes.count]
+        let defaults = UserDefaults.standard
+        let index = defaults.integer(forKey: "accentCounter")
+        defaults.set(index + 1, forKey: "accentCounter")
+        return AppTheme.itemColors[index % AppTheme.itemColors.count]
     }
 
-    @discardableResult
-    func createFolder(named name: String, in parent: URL, color: String, symbol: String) -> URL? {
-        do {
-            let url = try library.createFolder(named: name, in: parent, metadata: FolderMetadata(color: color, symbol: symbol))
-            refreshLibrary()
-            return url
-        } catch {
-            show(error)
-            return nil
-        }
+    func createFolder(named name: String, in parent: URL, color: String? = nil, symbol: String = "folder.fill") throws -> URL {
+        let url = try library.createFolder(named: name, in: parent, metadata: FolderMetadata(color: color ?? nextAccent(), symbol: symbol))
+        refreshLibrary()
+        return url
     }
 
-    func createNotebook(title: String, cover: ContentRef, accent: String, paper: PaperRef, titlePage: ContentRef?, size: PageSize, in folder: URL, open: Bool = true) {
+    func createNotebook(title: String, cover: ContentRef, accent: String, paper: PaperRef, titlePage: ContentRef?, size: PageSize, in folder: URL) throws -> NotePackage {
         let manifest = NoteFactory.notebook(title: title, cover: cover, accentColor: accent, paper: paper, titlePage: titlePage, size: size, catalog: catalog)
-        create(manifest, in: folder, open: open)
+        preferredPaper = paper
+        return try create(manifest, in: folder)
     }
 
-    func createNote(title: String, accent: String, paper: PaperRef, size: PageSize, in folder: URL, open: Bool = true) {
-        let manifest = NoteFactory.note(title: title, accentColor: accent, paper: paper, size: size, catalog: catalog)
-        create(manifest, in: folder, open: open)
+    /// A plain note with the last-used paper, named by today's date until it gets a real title.
+    func createQuickNote(in folder: URL) throws -> NotePackage {
+        let title = "Note " + Date().formatted(.dateTime.month(.abbreviated).day())
+        let paper = preferredPaper
+        let size = NoteFactory.pageSize(for: paper.template, preferred: preferredPageSize, catalog: catalog)
+        let manifest = NoteFactory.note(title: title, accentColor: AppTheme.current.accentHex, paper: paper, size: size, catalog: catalog)
+        return try create(manifest, in: folder)
     }
 
-    private func create(_ manifest: NoteManifest, in folder: URL, open: Bool) {
-        do {
-            let package = try library.createNote(manifest, in: folder)
-            refreshLibrary()
-            if open { openNote = OpenNote(package: package) }
-        } catch {
-            show(error)
-        }
+    private func create(_ manifest: NoteManifest, in folder: URL) throws -> NotePackage {
+        let package = try library.createNote(manifest, in: folder)
+        refreshLibrary()
+        return package
+    }
+
+    // MARK: Library edits
+
+    func togglePinned(_ item: LibraryEntry) {
+        try? library.setPinned(!item.isPinned, for: item.url)
+        refreshLibrary()
+    }
+
+    func delete(_ urls: [URL]) throws {
+        defer { refreshLibrary() }
+        for url in urls { try library.delete(url) }
+    }
+
+    func move(_ urls: [URL], to folder: URL) throws {
+        defer { refreshLibrary() }
+        for url in urls { _ = try library.move(url, to: folder) }
     }
 
     // MARK: Importing
 
-    /// Imports documents as new notes, or installs packs and note packages.
-    func importFiles(_ urls: [URL], into folder: URL) async {
-        isImporting = true
-        defer {
-            isImporting = false
-            refreshLibrary()
-        }
-        for url in urls {
-            let scoped = url.startAccessingSecurityScopedResource()
-            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-            do {
-                try await importFile(url, into: folder)
-            } catch {
-                show(error, title: "Couldn't import \(url.lastPathComponent)")
-            }
-        }
+    enum ImportOutcome {
+        case note(NotePackage)
+        case pack(LoadedPack)
     }
 
-    private func importFile(_ url: URL, into folder: URL) async throws {
-        switch url.pathExtension.lowercased() {
-        case PackRegistry.packExtension:
-            let pack = try packs.install(from: url)
-            reloadPacks()
-            alert = AppAlert(title: "Installed \(pack.manifest.name)", message: "Its papers, covers, and stickers are ready to use.")
-        case NotePackage.fileExtension:
+    /// Imports a document as a new note, installs a pack, or copies in a note package.
+    func importFile(_ url: URL, into folder: URL) async throws -> ImportOutcome {
+        let scoped = url.startAccessingSecurityScopedResource()
+        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+        defer { refreshLibrary() }
+        if url.pathExtension.lowercased() == NotePackage.archiveExtension {
+            return .note(try NotePackage.importArchive(url, into: folder))
+        }
+        if url.pathExtension.lowercased() == NotePackage.fileExtension {
             let name = url.deletingPathExtension().lastPathComponent
             let destination = library.uniqueURL(named: name, extension: NotePackage.fileExtension, in: folder)
             try FileManager.default.copyItem(at: url, to: destination)
@@ -139,16 +132,22 @@ final class AppModel {
             var manifest = try package.readManifest()
             manifest.id = UUID()
             try package.writeManifest(manifest)
-        default:
-            let pdf = try await DocumentImporter.convertToPDF(url)
-            let title = url.deletingPathExtension().lastPathComponent
-            _ = try DocumentImporter.createNote(fromPDF: pdf, title: title, accentColor: nextAccent(), in: folder, library: library, catalog: catalog)
+            return .note(package)
         }
+        if PackInstaller.looksLikePack(url) {
+            let pack = try packs.install(from: url)
+            reloadPacks()
+            return .pack(pack)
+        }
+        let pdf = try await DocumentImporter.convertToPDF(url)
+        let title = url.deletingPathExtension().lastPathComponent
+        let package = try DocumentImporter.createNote(fromPDF: pdf, title: title, accentColor: nextAccent(), in: folder, library: library, catalog: catalog)
+        return .note(package)
     }
 
-    /// Handles files opened from other apps.
-    func handleOpenURL(_ url: URL) {
-        Task { await importFiles([url], into: library.root) }
+    /// Whether a URL points inside the library, so it can be opened in place.
+    func isInLibrary(_ url: URL) -> Bool {
+        library.relativePath(of: url.deletingLastPathComponent()) != nil
     }
 
     // MARK: First launch
@@ -159,29 +158,26 @@ final class AppModel {
         UserDefaults.standard.set(true, forKey: key)
         guard library.contents(of: library.root).isEmpty else { return }
         let lined = PaperRef(template: ContentRef(packID: CorePack.id, itemID: "lined"))
-        if let folder = try? library.createFolder(named: "School", in: library.root, metadata: FolderMetadata(color: "#8056F6", symbol: "graduationcap.fill", stickers: [
-            PlacedSticker(sticker: ContentRef(packID: CorePack.id, itemID: "emoji-star"), x: 0.82, y: 0.3, scale: 0.9, rotation: 0.2),
-        ])) {
-            let manifest = NoteFactory.notebook(
-                title: "Welcome to MB Notes",
-                cover: ContentRef(packID: CorePack.id, itemID: "sunset"),
-                accentColor: "#F76CA0",
-                paper: lined,
-                titlePage: ContentRef(packID: CorePack.id, itemID: "title-doodle"),
-                size: preferredPageSize,
-                catalog: catalog
-            )
-            if let package = try? library.createNote(manifest, in: folder) {
-                var seeded = manifest
-                if seeded.pages.count > 1 {
-                    seeded.pages[1].elements = [
-                        .text("Write with Apple Pencil, or turn on finger drawing in the toolbar.\n\nTap the T tool to type, the smiley to add stickers, and the record button to capture a lecture with a live transcript.\n\nEverything here is yours: notes are plain files in the Files app, and papers, covers, and stickers come from packs you can make and share.",
-                              frame: Rect(x: 90, y: 110, width: 460, height: 260),
-                              style: TextContent(fontSize: 18, color: "#4C3AD6")),
-                    ]
-                }
-                try? package.writeManifest(seeded)
+        guard let folder = try? library.createFolder(named: "School", in: library.root, metadata: FolderMetadata(color: "#6A45E0", symbol: "graduationcap.fill")) else { return }
+        let manifest = NoteFactory.notebook(
+            title: "Welcome to MB Notes",
+            cover: ContentRef(packID: CorePack.id, itemID: "cloth"),
+            accentColor: "#6A45E0",
+            paper: lined,
+            titlePage: ContentRef(packID: CorePack.id, itemID: "title-minimal"),
+            size: preferredPageSize,
+            catalog: catalog
+        )
+        if let package = try? library.createNote(manifest, in: folder) {
+            var seeded = manifest
+            if seeded.pages.count > 1 {
+                seeded.pages[1].elements = [
+                    .text("Write with Apple Pencil, or turn on finger drawing in the toolbar.\n\nTap the T tool to type, + to add stickers and photos, and the record button to capture a lecture with a live transcript.\n\nEverything here is yours: notes are plain files in the Files app, and papers, covers, and stickers come from packs you can make and share.",
+                          frame: Rect(x: 90, y: 110, width: 460, height: 260),
+                          style: TextContent(fontSize: 18, color: "#1C1C1E")),
+                ]
             }
+            try? package.writeManifest(seeded)
         }
         refreshLibrary()
     }
@@ -214,11 +210,6 @@ final class ThumbnailCache {
         }.value
         if let image { cache.setObject(image, forKey: key(item)) }
         return image
-    }
-
-    func invalidate(_ url: URL) {
-        cache.removeAllObjects()
-        _ = url
     }
 
     private func key(_ item: LibraryEntry) -> NSString {

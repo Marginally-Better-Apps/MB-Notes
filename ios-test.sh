@@ -19,4 +19,5 @@ xcodebuild -quiet \
   -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
   -derivedDataPath "$DERIVED_DATA" \
   -skipMacroValidation -skipPackagePluginValidation \
+  COMPILATION_CACHE_ENABLE_CACHING=YES \
   test

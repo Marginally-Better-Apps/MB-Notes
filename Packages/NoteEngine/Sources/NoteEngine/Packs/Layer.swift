@@ -15,10 +15,10 @@ import Foundation
 /// | `isometric` | triangle grid | `spacing`, `style` (`lines` or `dots`) |
 /// | `staff` | music staves | `spacing` (line gap), `staffGap` |
 /// | `rect` / `ellipse` | shapes | `x y width height`, `fill`, `stroke`, `cornerRadius` |
+/// | `star` | a star or regular polygon | `points`, `innerRatio`, `x y width height`, `fill`, `stroke` |
 /// | `line` | a segment | `x1 y1 x2 y2` |
 /// | `path` | SVG path data | `d`, `viewBox`, `x y width height` |
 /// | `text` | text with `{{placeholders}}` | `text`, `fontSize`, `weight`, `design`, `align` |
-/// | `symbol` | an SF Symbol | `symbol`, `x y width height` |
 /// | `image` / `pdf` | pack asset | `src`, `page` |
 public struct Layer: Codable, Hashable, Sendable {
     public var type: String
@@ -67,9 +67,12 @@ public struct Layer: Codable, Hashable, Sendable {
     public var weight: String?
     public var design: String?
     public var align: String?
-    public var symbol: String?
     public var src: String?
     public var page: Int?
+    /// Points on a `star`; 5 by default. With `innerRatio` 1 it is a regular polygon.
+    public var points: Int?
+    /// Inner radius of a `star` as a fraction of the outer radius; 0.5 by default.
+    public var innerRatio: Double?
 
     public init(type: String) {
         self.type = type

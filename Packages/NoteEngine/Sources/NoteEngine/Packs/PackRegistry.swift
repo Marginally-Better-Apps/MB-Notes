@@ -14,10 +14,14 @@ public struct LoadedPack: Identifiable, Sendable {
 
     public var id: String { manifest.id }
 
-    /// Resolves a pack-relative path, refusing anything that escapes the pack.
+    /// Resolves a pack-relative path, refusing anything that escapes the pack, links included.
     public func assetURL(_ path: String) -> URL? {
-        let url = rootURL.appendingPathComponent(path).standardizedFileURL
-        guard url.path.hasPrefix(rootURL.standardizedFileURL.path + "/") else { return nil }
+        let parts = path.split(separator: "/", omittingEmptySubsequences: false)
+        guard !path.hasPrefix("/"), !parts.contains(where: { $0.isEmpty || $0 == "." || $0 == ".." }) else { return nil }
+        let url = rootURL.appendingPathComponent(path)
+        let resolved = url.resolvingSymlinksInPath().path
+        let root = rootURL.resolvingSymlinksInPath().path
+        guard resolved.hasPrefix(root + "/") else { return nil }
         return FileManager.default.fileExists(atPath: url.path) ? url : nil
     }
 }
@@ -67,7 +71,8 @@ public struct PackCatalog: Sendable {
     }
 
     public func sticker(_ ref: ContentRef) -> StickerDefinition? {
-        byID[ref.packID]?.stickers.first { $0.id == ref.itemID }
+        if ref.packID == EmojiPack.id { return EmojiPack.sticker(ref.itemID) }
+        return byID[ref.packID]?.stickers.first { $0.id == ref.itemID }
     }
 
     /// The template a page should draw, preferring installed packs, then the note's
@@ -104,6 +109,17 @@ public struct PackCatalog: Sendable {
     public var allSymbolSets: [SymbolSet] { packs.flatMap(\.symbolSets) }
 }
 
+/// The virtual pack every emoji belongs to, so any emoji can be a sticker. Only the
+/// character is stored; the device's emoji font draws it.
+public enum EmojiPack {
+    public static let id = "mbnotes.emoji"
+
+    public static func sticker(_ emoji: String) -> StickerDefinition? {
+        guard !emoji.isEmpty, emoji.unicodeScalars.contains(where: { $0.properties.isEmojiPresentation || $0.properties.isEmojiModifierBase || $0.value == 0xFE0F }) || emoji.unicodeScalars.first?.properties.isEmoji == true else { return nil }
+        return StickerDefinition(id: emoji, name: emoji, category: "Emoji", emoji: emoji, outlined: false)
+    }
+}
+
 /// Loads packs from the app bundle and the user's pack folder, and installs new ones.
 public final class PackRegistry: @unchecked Sendable {
     public static let packExtension = "mbpack"
@@ -136,7 +152,7 @@ public final class PackRegistry: @unchecked Sendable {
             for url in entries.sorted(by: { $0.lastPathComponent < $1.lastPathComponent }) where url.pathExtension == Self.packExtension {
                 do {
                     let pack = try Self.load(from: url, builtIn: builtIn)
-                    if !builtIn, pack.id == CorePack.id { throw PackError.reservedIdentifier(pack.id) }
+                    if !builtIn, pack.id == CorePack.id || pack.id == EmojiPack.id { throw PackError.reservedIdentifier(pack.id) }
                     packs.removeAll { $0.id == pack.id }
                     packs.append(pack)
                 } catch let error as PackError {
@@ -205,31 +221,30 @@ public final class PackRegistry: @unchecked Sendable {
         )
     }
 
-    /// Installs a pack from a `.mbpack` directory or zip archive and reloads the catalog.
+    /// Checks and installs a pack from a `.mbpack` directory or zip archive in one step.
     @discardableResult
     public func install(from source: URL) throws -> LoadedPack {
+        try install(try PackInstaller.stageSync(source, registry: self))
+    }
+
+    /// Moves a staged pack into place, keeping the previous version until the new one is in.
+    @discardableResult
+    public func install(_ preview: PackInstaller.Preview) throws -> LoadedPack {
         let fm = FileManager.default
-        let staging = fm.temporaryDirectory.appendingPathComponent("pack-\(UUID().uuidString)", isDirectory: true)
-        defer { try? fm.removeItem(at: staging) }
-        try fm.createDirectory(at: staging, withIntermediateDirectories: true)
-
-        var isDirectory: ObjCBool = false
-        fm.fileExists(atPath: source.path, isDirectory: &isDirectory)
-        let unpacked = staging.appendingPathComponent("unpacked", isDirectory: true)
-        if isDirectory.boolValue {
-            try fm.copyItem(at: source, to: unpacked)
-        } else {
-            try fm.unzipItem(at: source, to: unpacked)
-        }
-        // Archives often wrap the pack in one top-level folder.
-        let root = Self.findPackRoot(in: unpacked) ?? unpacked
-        let pack = try Self.load(from: root)
-        if pack.id == CorePack.id { throw PackError.reservedIdentifier(pack.id) }
-
+        let root = preview.pack.rootURL
+        defer { try? fm.removeItem(at: root.deletingLastPathComponent()) }
         try fm.createDirectory(at: userDirectory, withIntermediateDirectories: true)
-        let destination = userDirectory.appendingPathComponent(Self.folderName(for: pack.id))
-        if fm.fileExists(atPath: destination.path) { try fm.removeItem(at: destination) }
-        try fm.moveItem(at: root, to: destination)
+        let destination = userDirectory.appendingPathComponent(Self.folderName(for: preview.pack.id))
+        let backup = destination.appendingPathExtension("previous")
+        try? fm.removeItem(at: backup)
+        if fm.fileExists(atPath: destination.path) { try fm.moveItem(at: destination, to: backup) }
+        do {
+            try fm.moveItem(at: root, to: destination)
+        } catch {
+            if fm.fileExists(atPath: backup.path) { try? fm.moveItem(at: backup, to: destination) }
+            throw error
+        }
+        try? fm.removeItem(at: backup)
         reload()
         return try Self.load(from: destination)
     }
@@ -243,7 +258,7 @@ public final class PackRegistry: @unchecked Sendable {
     /// Zips a pack so it can be shared, returning the archive's URL in the temporary directory.
     public func exportArchive(packID: String) throws -> URL {
         guard let pack = catalog.pack(packID) else { throw PackError.notAPack(packID) }
-        let archive = FileManager.default.temporaryDirectory.appendingPathComponent("\(pack.manifest.name).\(Self.packExtension)")
+        let archive = FileManager.default.temporaryDirectory.appendingPathComponent(Self.folderName(for: pack.id))
         try? FileManager.default.removeItem(at: archive)
         try FileManager.default.zipItem(at: pack.rootURL, to: archive, shouldKeepParent: false)
         return archive

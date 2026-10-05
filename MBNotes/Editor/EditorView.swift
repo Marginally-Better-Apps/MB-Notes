@@ -6,23 +6,27 @@ import UniformTypeIdentifiers
 
 struct EditorView: View {
     let package: NotePackage
+    var initialPageID: UUID?
+    var onClose: () -> Void
     @Environment(AppModel.self) private var app
+    @Environment(\.zoomNamespace) private var zoom
     @State private var model: EditorModel?
     @State private var loadError: String?
 
     var body: some View {
         Group {
             if let model {
-                EditorContent(model: model)
+                EditorContent(model: model, initialPageID: initialPageID, onClose: onClose)
             } else if let loadError {
-                ContentUnavailableView("Couldn't open this note", systemImage: "exclamationmark.triangle", description: Text(loadError))
+                ContentUnavailableView("Couldn't Open This Note", systemImage: "exclamationmark.triangle", description: Text(loadError))
                     .overlay(alignment: .topLeading) {
-                        Button("Close") { app.openNote = nil }.padding()
+                        Button("Close", action: onClose).padding()
                     }
             } else {
                 ProgressView()
             }
         }
+        .modifier(ZoomTransition(id: package.url, namespace: zoom))
         .task {
             do {
                 model = try EditorModel(package: package, catalog: app.catalog)
@@ -33,55 +37,81 @@ struct EditorView: View {
     }
 }
 
+/// Zooms the editor out of its library tile when a namespace is available.
+private struct ZoomTransition: ViewModifier {
+    let id: URL
+    let namespace: Namespace.ID?
+
+    func body(content: Content) -> some View {
+        if let namespace {
+            content.navigationTransition(.zoom(sourceID: id, in: namespace))
+        } else {
+            content
+        }
+    }
+}
+
 private struct EditorContent: View {
     @Bindable var model: EditorModel
+    var initialPageID: UUID?
+    var onClose: () -> Void
     @Environment(AppModel.self) private var app
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(\.supportsMultipleWindows) private var supportsMultipleWindows
     @State private var sheet: EditorSheet?
     @State private var showInspector = false
     @State private var inspectorTab: InspectorTab = .recordings
     @State private var photoItem: PhotosPickerItem?
     @State private var showPhotoPicker = false
     @State private var showDocumentPicker = false
-    @State private var shareItem: ShareItem?
+    @State private var showScanner = false
+    @State private var title = ""
     @State private var renaming = false
-    @State private var newTitle = ""
-    @Environment(\.horizontalSizeClass) private var sizeClass
+    @State private var didSetup = false
 
     private var compact: Bool { sizeClass == .compact }
 
     var body: some View {
-        NoteCanvasRepresentable(model: model)
-            .ignoresSafeArea()
-            // An overlay can't change the canvas's size, however wide the chrome gets.
-            .overlay {
-                VStack(spacing: 8) {
-                    topBar
-                    if compact {
-                        HStack {
-                            ScrollView(.horizontal, showsIndicators: false) { toolSwitcher.padding(2) }
-                            pageButton
+        NavigationStack {
+            NoteCanvasRepresentable(model: model)
+                .overlay(alignment: .top) { hud }
+                .safeAreaInset(edge: .bottom) {
+                    if model.recording.state != .idle || model.recording.playingID != nil {
+                        RecordingBar(recording: model.recording) {
+                            inspectorTab = .recordings
+                            showInspector = true
                         }
+                        .frame(maxWidth: 560)
+                        .padding(.horizontal, 12)
+                        .padding(.bottom, compact && model.mode != .pen ? 4 : 8)
                     }
-                    Spacer()
-                    bottomBar
-                        // The tool picker docks along the bottom on iPhone.
-                        .padding(.bottom, compact && model.tool == .draw ? 96 : 0)
                 }
-                .padding(.horizontal, 12)
-            }
-        .inspector(isPresented: $showInspector) {
-            NoteInspector(model: model, tab: $inspectorTab)
-                .inspectorColumnWidth(min: 320, ideal: 380, max: 520)
+                .navigationTitle(model.manifest.title.isEmpty ? "Untitled" : model.manifest.title)
+                .navigationSubtitle("Page \(model.currentPageIndex + 1) of \(model.pageCount)")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbarTitleMenu { titleMenu }
+                .toolbar { toolbar }
+                .toolbar(compact && model.mode == .pen ? .hidden : .visible, for: .bottomBar)
+                .inspector(isPresented: $showInspector) {
+                    NoteInspector(model: model, tab: $inspectorTab)
+                        .inspectorColumnWidth(min: 320, ideal: 380, max: 520)
+                }
+        }
+        .alert("Rename", isPresented: $renaming) {
+            TextField("Title", text: $title)
+            Button("Cancel", role: .cancel) {}
+            Button("Rename") { model.rename(title) }
         }
         .sheet(item: $sheet) { sheet in
             switch sheet {
             case .pages: PageNavigator(model: model)
             case .paper: PaperSheet(model: model)
-            case .stickers: StickerPicker { model.addSticker($0) }
-            case .convert: ConvertHandwritingSheet(model: model)
+            case .stickers: StickerPicker { model.addSticker($0) } onEmoji: { model.addEmoji($0) }
+            case .convert: ConvertPageSheet(model: model)
             }
         }
+        .onChange(of: sheet) { if sheet == nil { model.canvas?.restoreFirstResponder() } }
         .photosPicker(isPresented: $showPhotoPicker, selection: $photoItem, matching: .images)
         .onChange(of: photoItem) {
             guard let item = photoItem else { return }
@@ -98,15 +128,11 @@ private struct EditorContent: View {
                 if scoped { url.stopAccessingSecurityScopedResource() }
             }
         }
-        .sheet(item: $shareItem) { item in
-            ShareSheet(items: [item.url])
+        .fullScreenCover(isPresented: $showScanner) {
+            DocumentScannerView { url in Task { await model.appendDocument(url) } }
+                .ignoresSafeArea()
         }
-        .alert("Rename", isPresented: $renaming) {
-            TextField("Title", text: $newTitle)
-            Button("Cancel", role: .cancel) {}
-            Button("Rename") { model.rename(newTitle) }
-        }
-        .alert("Something went wrong", isPresented: Binding(get: { model.errorMessage != nil }, set: { if !$0 { model.errorMessage = nil } })) {
+        .alert("Something Went Wrong", isPresented: Binding(get: { model.errorMessage != nil }, set: { if !$0 { model.errorMessage = nil } })) {
             Button("OK") { model.errorMessage = nil }
         } message: {
             Text(model.errorMessage ?? "")
@@ -114,6 +140,9 @@ private struct EditorContent: View {
         .onChange(of: scenePhase) {
             if scenePhase != .active { model.save() }
         }
+        .sensoryFeedback(.impact(weight: .light), trigger: model.hud) { _, new in new != nil }
+        .onAppear(perform: setUp)
+        .focusedSceneValue(\.editorActions, EditorActions(undo: { model.undo() }, redo: { model.redo() }, setMode: { model.mode = $0 }, deleteSelection: { model.canvas?.deleteSelection() }))
         #if DEBUG
         .task {
             // Screenshot hook: `-scrollToLastPage` jumps to the end after opening.
@@ -124,210 +153,220 @@ private struct EditorContent: View {
         #endif
     }
 
-    // MARK: Top bar
+    private func setUp() {
+        guard !didSetup else { return }
+        didSetup = true
+        // Phones open in View mode so one finger scrolls; a tap on Pen starts writing.
+        if compact { model.mode = .view }
+        if let pageID = initialPageID, let index = model.manifest.pages.firstIndex(where: { $0.id == pageID }) {
+            model.currentPageIndex = index
+            model.pendingScroll = index
+        }
+    }
 
-    private var topBar: some View {
-        GlassEffectContainer(spacing: 10) {
-            HStack(spacing: 10) {
-                Button {
-                    model.close()
-                    app.refreshLibrary()
-                    app.openNote = nil
-                } label: {
-                    Image(systemName: "chevron.left").font(.body.weight(.semibold)).frame(width: 34, height: 34)
-                }
-                .buttonStyle(.glass)
-                .accessibilityLabel("Close note")
+    private func close() {
+        model.close()
+        app.refreshLibrary()
+        onClose()
+    }
 
-                Button {
-                    newTitle = model.manifest.title
-                    renaming = true
-                } label: {
-                    Text(model.manifest.title.isEmpty ? "Untitled" : model.manifest.title)
-                        .font(.headline)
-                        .lineLimit(1)
-                        .padding(.horizontal, 14)
-                        .frame(height: 34)
-                }
-                .buttonStyle(.glass)
-                .layoutPriority(1)
+    // MARK: Toolbar
 
-                Spacer(minLength: 0)
+    @ToolbarContentBuilder private var toolbar: some ToolbarContent {
+        ToolbarItem(placement: .navigation) {
+            Button(action: close) { Label("Back", systemImage: "chevron.left") }
+                .keyboardShortcut("w", modifiers: .command)
+        }
 
-                if !compact {
-                    toolSwitcher
-                    Spacer(minLength: 0)
-                    undoRedo
-                }
+        if compact {
+            compactToolbar
+        } else {
+            regularToolbar
+        }
+    }
 
-                recordButton
+    @ToolbarContentBuilder private var regularToolbar: some ToolbarContent {
+        ToolbarItemGroup(placement: .primaryAction) {
+            modeButtons
+            convertToggle
+            insertMenu
+        }
+        ToolbarSpacer(.fixed, placement: .primaryAction)
+        ToolbarItemGroup(placement: .primaryAction) {
+            undoRedo
+            recordButton
+            Button {
+                showInspector.toggle()
+            } label: {
+                Label("Transcripts and AI", systemImage: "sidebar.trailing")
+            }
+            moreMenu
+        }
+    }
 
-                Button {
-                    inspectorTab = .ai
-                    showInspector.toggle()
-                } label: {
-                    Image(systemName: "sparkles").frame(width: 34, height: 34)
-                }
-                .buttonStyle(.glass)
-                .accessibilityLabel("Transcripts and AI")
-
+    @ToolbarContentBuilder private var compactToolbar: some ToolbarContent {
+        if model.mode == .pen {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Done") { model.mode = .view }
+            }
+        } else {
+            ToolbarItemGroup(placement: .primaryAction) {
+                undoRedo
                 moreMenu
             }
+            ToolbarItemGroup(placement: .bottomBar) {
+                pagePill
+                Spacer()
+                modeButtons
+                Spacer()
+                insertMenu
+            }
         }
-        .padding(.top, 4)
     }
 
-    /// On iPhone, PencilKit's own tool picker carries undo and redo.
+    /// One toggle per mode; the active one shows its "on" tint.
+    private var modeButtons: some View {
+        ForEach(EditorMode.allCases) { mode in
+            Toggle(isOn: Binding(get: { model.mode == mode }, set: { if $0 { model.mode = mode } })) {
+                Label(mode.title, systemImage: mode.systemImage)
+            }
+            .toggleStyle(.button)
+        }
+    }
+
+    /// While on, handwriting turns into text a moment after the pen lifts.
+    private var convertToggle: some View {
+        Toggle(isOn: $model.convertMode) {
+            Label("Convert Handwriting", systemImage: model.convertMode ? "character.cursor.ibeam" : "pencil.and.scribble")
+        }
+        .toggleStyle(.button)
+        .onChange(of: model.convertMode) { _, on in
+            if on {
+                model.mode = .pen
+                model.flash("Write, and it turns into text")
+            }
+        }
+    }
+
+    private var insertMenu: some View {
+        Menu {
+            Button { showPhotoPicker = true } label: { Label("Photo", systemImage: "photo") }
+            if DocumentScannerView.isSupported {
+                Button { showScanner = true } label: { Label("Scan Document", systemImage: "doc.viewfinder") }
+            }
+            Button { sheet = .stickers } label: { Label("Sticker or Emoji", systemImage: "face.smiling") }
+            Button { model.mode = .text; model.flash("Tap the page to type") } label: { Label("Text Box", systemImage: "textbox") }
+            Button { showDocumentPicker = true } label: { Label("PDF or Slides", systemImage: "doc.badge.plus") }
+            Divider()
+            Button { model.addPage() } label: { Label("Page After This One", systemImage: "plus.rectangle.portrait") }
+            Button { model.addPage(after: model.currentPageIndex - 1) } label: { Label("Page Before This One", systemImage: "plus.rectangle.portrait.fill") }
+        } label: {
+            Label("Insert", systemImage: "plus")
+        }
+    }
+
     private var undoRedo: some View {
-        HStack(spacing: 4) {
-            Button { model.canvas?.undo() } label: { Image(systemName: "arrow.uturn.backward").frame(width: 30, height: 30) }
-                .accessibilityLabel("Undo")
-            Button { model.canvas?.redo() } label: { Image(systemName: "arrow.uturn.forward").frame(width: 30, height: 30) }
-                .accessibilityLabel("Redo")
+        Group {
+            Button { model.undo() } label: { Label(model.undoTitle.isEmpty ? "Undo" : "Undo \(model.undoTitle)", systemImage: "arrow.uturn.backward") }
+                .disabled(!model.canUndo)
+                .keyboardShortcut("z", modifiers: .command)
+            Button { model.redo() } label: { Label(model.redoTitle.isEmpty ? "Redo" : "Redo \(model.redoTitle)", systemImage: "arrow.uturn.forward") }
+                .disabled(!model.canRedo)
+                .keyboardShortcut("z", modifiers: [.command, .shift])
         }
-        .buttonStyle(.glass)
     }
 
-    private var pageButton: some View {
+    private var pagePill: some View {
         Button { sheet = .pages } label: {
-            Text("\(model.currentPageIndex + 1) / \(model.pageCount)")
-                .font(.subheadline.weight(.semibold))
+            Text("\(model.currentPageIndex + 1) of \(model.pageCount)")
+                .font(.subheadline.weight(.medium))
                 .monospacedDigit()
-                .padding(.horizontal, 14)
-                .frame(height: 36)
         }
-        .buttonStyle(.glass)
         .accessibilityLabel("Page \(model.currentPageIndex + 1) of \(model.pageCount)")
-    }
-
-    private var toolSwitcher: some View {
-        HStack(spacing: 2) {
-            ForEach(EditorTool.allCases) { tool in
-                Button {
-                    model.tool = tool
-                } label: {
-                    Image(systemName: tool.systemImage)
-                        .font(.body.weight(.semibold))
-                        .frame(width: 40, height: 34)
-                        .foregroundStyle(model.tool == tool ? .white : .primary)
-                        .background {
-                            if model.tool == tool {
-                                Capsule().fill(Brand.gradient)
-                            }
-                        }
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(tool.title)
-            }
-            Divider().frame(height: 22).padding(.horizontal, 4)
-            Button { sheet = .stickers } label: {
-                Image(systemName: "face.smiling").frame(width: 36, height: 34)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Stickers")
-            Button { showPhotoPicker = true } label: {
-                Image(systemName: "photo").frame(width: 36, height: 34)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Insert photo")
-            Button { model.shapeSnapping.toggle() } label: {
-                Image(systemName: model.shapeSnapping ? "square.on.circle.fill" : "square.on.circle")
-                    .foregroundStyle(model.shapeSnapping ? Brand.pink : .primary)
-                    .frame(width: 36, height: 34)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(model.shapeSnapping ? "Shape snapping on" : "Shape snapping off")
-            Button { model.fingerDrawing.toggle() } label: {
-                Image(systemName: model.fingerDrawing ? "hand.draw.fill" : "hand.draw")
-                    .foregroundStyle(model.fingerDrawing ? Brand.pink : .primary)
-                    .frame(width: 36, height: 34)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(model.fingerDrawing ? "Finger drawing on" : "Finger drawing off")
-        }
-        .padding(.horizontal, 4)
-        .padding(.vertical, 2)
-        .glassEffect(.regular.interactive(), in: .capsule)
     }
 
     private var recordButton: some View {
         Button {
             Task {
-                if model.recording.state == .recording { await model.recording.stop() } else { await model.recording.start() }
+                if model.recording.state.isCapturing { await model.recording.stop() } else { await model.recording.start() }
             }
         } label: {
-            HStack(spacing: 6) {
-                Image(systemName: model.recording.state == .recording ? "stop.fill" : "record.circle")
-                if model.recording.state == .recording {
-                    Text(Duration.seconds(model.recording.elapsed).formatted(.time(pattern: .minuteSecond)))
-                        .monospacedDigit()
-                }
-            }
-            .font(.body.weight(.semibold))
-            .foregroundStyle(model.recording.state == .recording ? .white : Color.red)
-            .frame(height: 34)
-            .padding(.horizontal, model.recording.state == .recording ? 10 : 2)
+            Label(model.recording.state.isCapturing ? "Stop Recording" : "Record", systemImage: model.recording.state.isCapturing ? "stop.circle.fill" : "record.circle")
         }
-        .buttonStyle(.glass)
-        .tint(model.recording.state == .recording ? .red : nil)
-        .disabled(!(model.recording.state == .idle || model.recording.state == .recording))
-        .accessibilityLabel(model.recording.state == .recording ? "Stop recording" : "Record")
+        .tint(.red)
+        .disabled(!(model.recording.state == .idle || model.recording.state.isCapturing))
     }
 
     private var moreMenu: some View {
         Menu {
-            Section("Pages") {
-                Button { model.addPage() } label: { Label("Add page", systemImage: "plus.rectangle.portrait") }
-                Button { sheet = .pages } label: { Label("All pages", systemImage: "square.grid.2x2") }
-                Button { sheet = .paper } label: { Label("Paper", systemImage: "doc.richtext") }
-                Button { showDocumentPicker = true } label: { Label("Insert PDF or slides", systemImage: "doc.badge.plus") }
+            if compact {
+                Section {
+                    recordButton
+                    Button { showInspector.toggle() } label: { Label("Transcripts and AI", systemImage: "sparkles") }
+                    convertToggle
+                }
             }
-            Section("Text") {
-                Button { sheet = .convert } label: { Label("Convert handwriting to text", systemImage: "character.textbox") }
+            Section {
+                Button { title = model.manifest.title; renaming = true } label: { Label("Rename…", systemImage: "pencil") }
+                Toggle(isOn: $model.shapeSnapping) { Label("Snap Shapes", systemImage: "square.on.circle") }
+                Toggle(isOn: $model.fingerDrawing) { Label("Draw with Finger", systemImage: "hand.draw") }
             }
-            Section("Share") {
-                Button {
-                    Task { if let url = await model.exportPDF(includeTranscripts: false) { shareItem = ShareItem(url: url) } }
-                } label: { Label("Export searchable PDF", systemImage: "doc.text.magnifyingglass") }
-                Button {
-                    Task { if let url = await model.exportPDF(includeTranscripts: true) { shareItem = ShareItem(url: url) } }
-                } label: { Label("Export PDF with transcripts", systemImage: "text.document") }
-                Button {
-                    if let url = model.exportPackage() { shareItem = ShareItem(url: url) }
-                } label: { Label("Share MB Notes file", systemImage: "square.and.arrow.up") }
+            Section {
+                Button { sheet = .pages } label: { Label("All Pages", systemImage: "square.grid.2x2") }
+                Button { sheet = .paper } label: { Label("Paper…", systemImage: "doc.richtext") }
+                Button { sheet = .convert } label: { Label("Convert Page to Text…", systemImage: "character.textbox") }
+            }
+            Section {
+                Button { model.canvas?.zoomToFit(animated: true) } label: { Label("Fit Page", systemImage: "arrow.down.right.and.arrow.up.left") }
+                    .keyboardShortcut("0", modifiers: .command)
             }
         } label: {
-            Image(systemName: "ellipsis").frame(width: 34, height: 34)
+            Label("More", systemImage: "ellipsis")
         }
-        .buttonStyle(.glass)
-        .accessibilityLabel("More")
     }
 
-    // MARK: Bottom bar
-
-    private var bottomBar: some View {
-        HStack(alignment: .bottom) {
-            if !compact { pageButton }
-
-            Spacer()
-
-            if model.recording.state != .idle || model.recording.playingID != nil {
-                RecordingBar(recording: model.recording) {
-                    inspectorTab = .recordings
-                    showInspector = true
-                }
-                .frame(maxWidth: 520)
-            }
-
-            Spacer()
-
-            Button { model.addPage() } label: {
-                Image(systemName: "plus").font(.body.weight(.bold)).frame(width: 36, height: 36)
-            }
-            .buttonStyle(.glassProminent)
-            .accessibilityLabel("Add page")
+    @ViewBuilder private var titleMenu: some View {
+        Button { title = model.manifest.title; renaming = true } label: { Label("Rename…", systemImage: "pencil") }
+        Button { sheet = .pages } label: { Label("All Pages", systemImage: "square.grid.2x2") }
+        Picker("Pages", selection: $model.pageAxis) {
+            Label("Side by Side", systemImage: "rectangle.split.2x1").tag(PageLayout.Axis.horizontal)
+            Label("Continuous", systemImage: "rectangle.split.1x2").tag(PageLayout.Axis.vertical)
         }
-        .padding(.bottom, 8)
+        Button { sheet = .paper } label: { Label("Paper…", systemImage: "doc.richtext") }
+        Menu {
+            ShareLink(item: NotePDFExport(package: model.package, catalog: app.catalog), preview: SharePreview(model.manifest.title)) {
+                Label("PDF", systemImage: "doc.richtext")
+            }
+            ShareLink(item: NotePDFExport(package: model.package, catalog: app.catalog, includeTranscripts: true), preview: SharePreview(model.manifest.title)) {
+                Label("PDF with Transcripts", systemImage: "text.document")
+            }
+            ShareLink(item: NoteArchiveExport(package: model.package), preview: SharePreview(model.manifest.title)) {
+                Label("MB Notes File", systemImage: "doc.zipper")
+            }
+            if !model.manifest.recordings.isEmpty {
+                ShareLink(item: NoteArchiveExport(package: model.package, includeRecordings: false), preview: SharePreview(model.manifest.title)) {
+                    Label("MB Notes File Without Recordings", systemImage: "doc.zipper")
+                }
+            }
+        } label: {
+            Label("Share", systemImage: "square.and.arrow.up")
+        }
+    }
+
+    private var hud: some View {
+        Group {
+            if let message = model.hud {
+                Text(message)
+                    .font(.subheadline.weight(.medium))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .glassEffect(.regular, in: .capsule)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .padding(.top, 8)
+        .animation(.snappy, value: model.hud)
+        .allowsHitTesting(false)
     }
 }
 
@@ -336,23 +375,21 @@ enum EditorSheet: String, Identifiable {
     var id: String { rawValue }
 }
 
-struct ShareItem: Identifiable {
-    let url: URL
-    var id: URL { url }
+/// What the focused editor can do, for menu-bar commands.
+struct EditorActions {
+    var undo: () -> Void
+    var redo: () -> Void
+    var setMode: (EditorMode) -> Void
+    var deleteSelection: () -> Void
 }
 
-struct ShareSheet: UIViewControllerRepresentable {
-    let items: [Any]
-
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: items, applicationActivities: nil)
-    }
-
-    func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
+extension FocusedValues {
+    @Entry var editorActions: EditorActions?
 }
 
 struct NoteCanvasRepresentable: UIViewControllerRepresentable {
     let model: EditorModel
+    @Environment(\.theme) private var theme
 
     func makeUIViewController(context: Context) -> NoteCanvasController {
         let controller = NoteCanvasController(model: model)
@@ -363,9 +400,16 @@ struct NoteCanvasRepresentable: UIViewControllerRepresentable {
     func updateUIViewController(_ controller: NoteCanvasController, context: Context) {
         // Reading these registers observation so SwiftUI calls back when they change.
         _ = model.layoutVersion
-        _ = model.tool
+        _ = model.mode
+        _ = model.convertMode
         _ = model.fingerDrawing
         _ = model.shapeSnapping
+        _ = model.pageAxis
+        _ = model.pendingScroll
+        _ = model.selection
+        controller.view.tintColor = UIColor(theme.accent)
+        controller.view.backgroundColor = UIColor(theme.canvasBackdrop)
+        controller.updateGestureSettings()
         controller.apply()
     }
 }
