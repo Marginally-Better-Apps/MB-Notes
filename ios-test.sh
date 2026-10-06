@@ -41,19 +41,20 @@ BUILD_ARGS=(
   ONLY_ACTIVE_ARCH=YES COMPILATION_CACHE_ENABLE_CACHING=NO ENABLE_TESTABILITY=YES
   MBNOTES_UI_AUTOMATION=YES MBNOTES_REPORT_URL=http://127.0.0.1:8765/report
 )
-# Other projects can invoke Maestro outside Gala's queue. Wait before using XCTest.
-wait_for_maestro() {
+# Other projects can invoke builds, Maestro, and captures outside Gala's queue.
+wait_for_test_mac() {
 python3 - <<'PYSEQUENTIAL'
 import subprocess,time
 for attempt in range(120):
     processes=subprocess.check_output(['ps','-axo','command'],text=True)
-    if not any(line.startswith('java ') and 'maestro.cli.AppKt' in line for line in processes.splitlines()): break
-    if attempt==0: print('Waiting for the other Maestro run before starting Xcode tests.',flush=True)
+    active = any((line.startswith('java ') and 'maestro.cli.AppKt' in line) or line.startswith('/Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild ') or (line.startswith('bash ') and 'capture-store-screenshots.sh' in line) or (line.startswith('/Library/Developer/PrivateFrameworks/CoreSimulator.framework') and 'bootstatus' in line) for line in processes.splitlines())
+    if not active: break
+    if attempt==0: print('Waiting for the other build/test/capture run before starting Xcode tests.',flush=True)
     time.sleep(5)
-else: raise SystemExit('Another Maestro run still owns the test Mac; retry the gate later.')
+else: raise SystemExit('Another build/test/capture run still owns the test Mac; retry the gate later.')
 PYSEQUENTIAL
 }
-wait_for_maestro
+wait_for_test_mac
 xcodebuild "${BUILD_ARGS[@]}" build-for-testing
 APP="$DERIVED_DATA/Build/Products/Release-iphonesimulator/MBNotes.app"
 python3 - "$APP/Info.plist" <<'PYINFO'
@@ -66,7 +67,7 @@ xcrun simctl boot "$SIMULATOR_ID"
 xcrun simctl bootstatus "$SIMULATOR_ID" -b
 # Run local interactions before adding a second simulator to the 8 GB Mac.
 GUEST_TEST="MBNotesUITests/CollaborationInteractionTests/testNativeGuestJoinsByAppLinkAndEditsTheOtherIOSOwnersNote"
-wait_for_maestro
+wait_for_test_mac
 xcodebuild "${BUILD_ARGS[@]}" -skip-testing:"$GUEST_TEST" -resultBundlePath "$GALA_ARTIFACT_DIR/Collaboration.xcresult" test-without-building
 xcrun xcresulttool export attachments --path "$GALA_ARTIFACT_DIR/Collaboration.xcresult" --output-path "$GALA_ARTIFACT_DIR/screenshots/local"
 xcrun simctl boot "$HOST_ID"
@@ -82,7 +83,7 @@ for _ in range(60):
     except Exception: time.sleep(1)
 else: raise SystemExit('Native collaboration owner did not become ready')
 PYWAIT
-wait_for_maestro
+wait_for_test_mac
 xcodebuild "${BUILD_ARGS[@]}" -only-testing:"$GUEST_TEST" -resultBundlePath "$GALA_ARTIFACT_DIR/NativeGuest.xcresult" test-without-building
 xcrun xcresulttool export attachments --path "$GALA_ARTIFACT_DIR/NativeGuest.xcresult" --output-path "$GALA_ARTIFACT_DIR/screenshots/guest"
 # Test the published web client against the native owner after XCTest has finished.

@@ -56,6 +56,8 @@ The published React browser demo is [available here](https://planista.shloklab.u
 
 ## Run and verify
 
+Current evidence: nine shared-protocol tests and three browser interaction tests pass, including the published demo. The 43 Swift engine tests and eight native unit tests passed in earlier runs. The native interaction gate has not passed yet: previous runs reached saved text, ink, and invitations, but failed on native accessibility checks. The tests now check rendered saved content with Vision and pixels, and open the fixture through the library. The latest Release build compiled, but validation stopped at simulator boot while another project's repeated Maestro runs exhausted the Mac's process resources. The two-iOS-client and real-native-owner browser tests still need a completed run. Do not treat this branch as device-verified or campus-ready.
+
 Use Node 22 or newer and Python 3:
 
 ```sh
