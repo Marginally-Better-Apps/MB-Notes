@@ -173,6 +173,10 @@ final class CollaborationInteractionTests: XCTestCase {
         XCTAssertTrue(app.webViews.staticTexts.matching(NSPredicate(format: "label ==[c] %@", "Joined session")).firstMatch.exists)
         let paper = app.webViews.images["Shared canvas"]
         XCTAssertTrue(paper.exists)
+        XCTAssertGreaterThan(paper.frame.width, 300, "A guest needs a usable page, rather than a reduced form sheet")
+        XCTAssertGreaterThan(paper.frame.height, 300)
+        XCTAssertEqual(paper.frame.width / paper.frame.height, 612.0 / 792.0, accuracy: 0.02)
+        XCTAssertTrue(app.frame.contains(paper.frame))
         app.webViews.switches["Add text"].tap()
         paper.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.35)).tap()
         let text = app.webViews.textViews["Text to add"]

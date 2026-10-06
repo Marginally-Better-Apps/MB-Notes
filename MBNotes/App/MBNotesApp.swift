@@ -68,7 +68,7 @@ private struct SceneRoot: View {
                 }
                 else { scene.handleOpenURL(url) }
             }
-            .sheet(isPresented: Binding(get: { collaborationLink != nil }, set: { if !$0 { collaborationLink = nil } })) {
+            .fullScreenCover(isPresented: Binding(get: { collaborationLink != nil }, set: { if !$0 { collaborationLink = nil } })) {
                 CollaborationView(invitation: collaborationLink)
             }
             .fullScreenCover(item: $scene.openNote, onDismiss: {

@@ -21,6 +21,7 @@ struct FolderView: View {
     @State private var newName = ""
     @State private var showImporter = false
     @State private var showScanner = false
+    @State private var showCollaboration = false
     @State private var editMode = EditMode.inactive
     @State private var selection = Set<URL>()
     @State private var dropTarget: URL?
@@ -30,13 +31,12 @@ struct FolderView: View {
     @ScaledMetric private var tileWidth: CGFloat = 150
 
     enum Sheet: Identifiable {
-        case newNotebook, newFolder, collaboration
+        case newNotebook, newFolder
         case editFolder(LibraryEntry)
         case move([LibraryEntry])
 
         var id: String {
             switch self {
-            case .collaboration: return "collaboration"
             case .newNotebook: return "notebook"
             case .newFolder: return "folder"
             case .editFolder(let item): return "edit-\(item.url.path)"
@@ -86,13 +86,13 @@ struct FolderView: View {
             .sensoryFeedback(.warning, trigger: deletedCount)
             .sheet(item: $sheet) { sheet in
                 switch sheet {
-                case .collaboration: CollaborationView()
                 case .newNotebook: NotebookSheet(folder: folder)
                 case .newFolder: FolderEditorSheet(parent: folder, editing: nil)
                 case .editFolder(let item): FolderEditorSheet(parent: folder, editing: item)
                 case .move(let items): MoveSheet(items: items)
                 }
             }
+            .fullScreenCover(isPresented: $showCollaboration) { CollaborationView() }
             .fullScreenCover(isPresented: $showScanner) {
                 DocumentScannerView { url in Task { await scene.importFiles([url], into: folder) } }
                     .ignoresSafeArea()
@@ -338,7 +338,7 @@ struct FolderView: View {
 
     private var optionsMenu: some View {
         Menu {
-            Button { sheet = .collaboration } label: { Label("Join Live Note", systemImage: "person.2.wave.2") }
+            Button { showCollaboration = true } label: { Label("Join Live Note", systemImage: "person.2.wave.2") }
             Button { withAnimation { editMode = .active } } label: { Label("Select", systemImage: "checkmark.circle") }
             Divider()
             Picker("Layout", selection: $layoutRaw) {
