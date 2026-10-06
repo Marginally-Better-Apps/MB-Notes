@@ -2,6 +2,14 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <key>NSAppTransportSecurity</key>
+    <dict><key>NSAllowsLocalNetworking</key><true/></dict>
+    <key>MBNotesUIAutomation</key><string>$(MBNOTES_UI_AUTOMATION)</string>
+    <key>GalaReportURL</key><string>$(MBNOTES_REPORT_URL)</string>
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>MB Notes connects to nearby devices when you share or join a live note.</string>
+    <key>NSBonjourServices</key>
+    <array><string>_mbnotes-collab._tcp</string></array>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>

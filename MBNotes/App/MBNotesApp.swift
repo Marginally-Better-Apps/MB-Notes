@@ -8,6 +8,11 @@ struct MBNotesApp: App {
     @AppStorage(AppTheme.storageKey) private var themeID = AppTheme.default.rawValue
     @AppStorage(AppearancePreference.storageKey) private var appearanceID = AppearancePreference.system.rawValue
 
+    init() {
+        GalaReporter.start(captureOutput: true, screenshotAfter: 3)
+        if GalaReporter.endpoint != nil { print("MB Notes collaboration test capture enabled") }
+    }
+
     private var theme: AppTheme { AppTheme(rawValue: themeID) ?? .default }
     private var appearance: AppearancePreference { AppearancePreference(rawValue: appearanceID) ?? .system }
 
@@ -15,6 +20,7 @@ struct MBNotesApp: App {
         WindowGroup {
             SceneRoot(app: app)
                 .themed(theme, appearance: appearance)
+
         }
         .commands { LibraryCommands() }
 
@@ -39,6 +45,8 @@ private extension View {
 /// The library window. Owns the per-window state and presents the editor.
 private struct SceneRoot: View {
     let app: AppModel
+    @State private var collaborationLink: String?
+    @State private var pendingCollaborationLink: String?
     @State private var scene: SceneModel
     @Environment(\.theme) private var theme
 
@@ -51,8 +59,24 @@ private struct SceneRoot: View {
         RootView()
             .environment(app)
             .environment(scene)
-            .onOpenURL { scene.handleOpenURL($0) }
-            .fullScreenCover(item: $scene.openNote) { note in
+            .onOpenURL { url in
+                if url.scheme == "mbnotes", url.host == "collaboration" {
+                    if scene.openNote != nil {
+                        pendingCollaborationLink = url.absoluteString
+                        scene.openNote = nil
+                    } else { collaborationLink = url.absoluteString }
+                }
+                else { scene.handleOpenURL(url) }
+            }
+            .sheet(isPresented: Binding(get: { collaborationLink != nil }, set: { if !$0 { collaborationLink = nil } })) {
+                CollaborationView(invitation: collaborationLink)
+            }
+            .fullScreenCover(item: $scene.openNote, onDismiss: {
+                if let pending = pendingCollaborationLink {
+                    pendingCollaborationLink = nil
+                    collaborationLink = pending
+                }
+            }) { note in
                 EditorView(package: note.package, initialPageID: note.pageID) { scene.openNote = nil }
                     .environment(app)
                     .environment(scene)

@@ -16,13 +16,37 @@ final class AppModel {
 
     init() {
         let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        library = LibraryStore(root: documents.appendingPathComponent("Library", isDirectory: true))
+        let testing = Bundle.main.object(forInfoDictionaryKey: "MBNotesUIAutomation") as? String == "YES" && ProcessInfo.processInfo.arguments.contains("-collaborationTesting")
+        let root = documents.appendingPathComponent(testing ? "CollaborationTestLibrary" : "Library", isDirectory: true)
+        if testing && !ProcessInfo.processInfo.arguments.contains("-collaborationKeepLibrary") { try? FileManager.default.removeItem(at: root) }
+        library = LibraryStore(root: root)
         packs = PackRegistry(
             builtInDirectory: Bundle.main.url(forResource: "Packs", withExtension: nil),
             userDirectory: documents.appendingPathComponent("Packs", isDirectory: true)
         )
         reloadPacks()
-        seedLibraryIfNeeded()
+        if testing {
+            if library.contents(of: library.root).isEmpty {
+                let manifest = NoteFactory.note(title: "Collaboration fixture", accentColor: "#8056F6", paper: PaperRef(template: ContentRef(packID: CorePack.id, itemID: "lined")), size: .letter, catalog: catalog)
+                if let package = try? library.createNote(manifest, in: root) {
+                    let pdf = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 612, height: 792)).pdfData { context in
+                        context.beginPage()
+                        UIColor(red: 1, green: 0.9, blue: 0.75, alpha: 1).setFill()
+                        context.cgContext.fill(CGRect(x: 40, y: 50, width: 530, height: 100))
+                        ("Imported lecture background" as NSString).draw(at: CGPoint(x: 60, y: 80), withAttributes: [.font: UIFont.systemFont(ofSize: 22), .foregroundColor: UIColor.black])
+                    }
+                    let file = root.appendingPathComponent("lecture.pdf")
+                    if (try? pdf.write(to: file)) != nil {
+                        var updated = manifest
+                        if (try? DocumentImporter.appendPDF(file, to: package, manifest: &updated)) != nil {
+                            updated.pages.removeFirst()
+                            try? package.writeManifest(updated)
+                        }
+                        try? FileManager.default.removeItem(at: file)
+                    }
+                }
+            }
+        } else { seedLibraryIfNeeded() }
         library.purgeTrash()
     }
 

@@ -34,6 +34,9 @@ final class SceneModel {
 
     init(app: AppModel) {
         self.app = app
+        if Bundle.main.object(forInfoDictionaryKey: "MBNotesUIAutomation") as? String == "YES", ProcessInfo.processInfo.arguments.contains("-collaborationTesting"), ProcessInfo.processInfo.arguments.contains("-openFirstNote"), let first = app.library.allNotes().first {
+            openNote = OpenNote(package: NotePackage(url: first.url))
+        }
         #if DEBUG
         // Screenshot and test hook: `-openFirstNote` opens the newest note on launch.
         if ProcessInfo.processInfo.arguments.contains("-openFirstNote"), let first = app.library.allNotes().first {

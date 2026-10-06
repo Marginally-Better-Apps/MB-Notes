@@ -5,6 +5,8 @@ set -euo pipefail
 : "${GALA_BUILD_DIR:?Gala build directory is required}"
 : "${GALA_ARTIFACT_DIR:?Gala artifact directory is required}"
 
+(cd CollaborationWeb && npm ci --no-audit --no-fund && npm run build)
+
 command -v xcodegen >/dev/null && xcodegen generate --quiet
 
 DERIVED_DATA="$GALA_BUILD_DIR/DerivedData"
@@ -13,7 +15,7 @@ xcodebuild -quiet \
   -configuration Release -destination 'generic/platform=iOS' \
   -derivedDataPath "$DERIVED_DATA" \
   -skipMacroValidation -skipPackagePluginValidation \
-  COMPILATION_CACHE_ENABLE_CACHING=YES \
+  COMPILATION_CACHE_ENABLE_CACHING=NO \
   CODE_SIGNING_ALLOWED=NO build
 
 APP="$DERIVED_DATA/Build/Products/Release-iphoneos/MBNotes.app"

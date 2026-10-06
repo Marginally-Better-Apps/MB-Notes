@@ -1,0 +1,29 @@
+{
+  "name": "mb-notes-collaboration-experiment",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc --noEmit && vite build && python3 ../Scripts/bundle_collaboration.py",
+    "test": "vitest run src/*.test.ts",
+    "test:e2e": "playwright test --grep \"automatic ICE|relay settings|page background\"",
+    "test:relay": "playwright test --grep \"forced TURN\"",
+    "test:native-owner": "playwright test native-owner.spec.ts"
+  },
+  "dependencies": {
+    "peerjs": "^1.5.5",
+    "qrcode": "^1.5.4",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.3",
+    "vitest": "^5.0.3"
+  }
+}

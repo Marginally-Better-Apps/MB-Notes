@@ -7,3 +7,9 @@ xcuserdata/
 .gala/
 .swiftpm/
 Packages/*/.build/
+node_modules/
+CollaborationWeb/dist/
+CollaborationWeb/test-results/
+CollaborationWeb/playwright-report/
+
+MBNotes/Resources/Collaboration/index.html

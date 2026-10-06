@@ -1,0 +1,40 @@
+import { expect, test } from '@playwright/test';
+import { inviteURL } from '../../Packages/NoteEngine/Collaboration/session';
+
+test('browser guest saves text and ink on a real native owner', async ({ page, request, baseURL }) => {
+  const endpoint = process.env.MB_NATIVE_FIXTURE_URL;
+  test.skip(!endpoint, 'Requires the running iOS owner fixture in the Gala gate.');
+  const state = async () => {
+    const response = await request.get(endpoint!);
+    expect(response.ok()).toBeTruthy();
+    return response.json();
+  };
+  const fixture = await state();
+  await page.goto(inviteURL(baseURL!, fixture.invite));
+  await expect(page.getByRole('button', { name: 'Add text', exact: true })).toBeEnabled({ timeout: 45000 });
+  await expect(page.locator('.paper image')).toHaveAttribute('href', /^data:image\/jpeg;base64,/);
+  const paper = (await page.getByRole('img', { name: 'Shared canvas' }).boundingBox())!;
+  expect(paper.width / paper.height).toBeCloseTo(612 / 792, 2);
+  await page.getByRole('button', { name: 'Add text', exact: true }).click();
+  await page.getByRole('img', { name: 'Shared canvas' }).click({ position: { x: paper.width * .3, y: paper.height * .35 } });
+  await page.getByRole('textbox', { name: 'Text to add' }).fill('Browser writes to the native owner');
+  await page.getByRole('button', { name: 'Add to canvas', exact: true }).click();
+  await expect.poll(async () => (await state()).texts).toContain('Browser writes to the native owner');
+  await page.getByRole('button', { name: 'Pen', exact: true }).click();
+  await page.mouse.move(paper.x + paper.width * .2, paper.y + paper.height * .6);
+  await page.mouse.down();
+  await page.mouse.move(paper.x + paper.width * .7, paper.y + paper.height * .65, { steps: 20 });
+  await page.mouse.up();
+  await expect.poll(async () => (await state()).strokes).toBe(1);
+  await expect(page.getByTestId('revision')).toHaveText('Revision 2');
+  await page.getByRole('button', { name: 'Laser pointer', exact: true }).click();
+  await page.mouse.move(paper.x + paper.width * .4, paper.y + paper.height * .5);
+  await page.mouse.down();
+  await expect(page.locator('[data-laser]')).toHaveCount(1);
+  await page.mouse.up();
+  await expect(page.locator('[data-laser]')).toHaveCount(0, { timeout: 5000 });
+  expect((await state()).strokes).toBe(1);
+  await page.screenshot({ path: 'test-results/native-owner-browser-guest.png' });
+  await page.getByRole('button', { name: 'Leave', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Host a demo board' })).toBeVisible();
+});

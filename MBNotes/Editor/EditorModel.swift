@@ -522,6 +522,13 @@ final class EditorModel {
         }
     }
 
+    func collaborationDidEnd() {
+        undoManager.removeAllActions()
+        refreshUndoState()
+        layoutVersion += 1
+        canvas?.apply()
+    }
+
     func save() {
         saveTask?.cancel()
         canvas?.flushInk(notify: false)

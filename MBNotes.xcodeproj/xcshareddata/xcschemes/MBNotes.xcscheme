@@ -35,6 +35,20 @@
                ReferencedContainer = "container:MBNotes.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "527B50E9501381F596265F2D"
+               BuildableName = "MBNotesUITests.xctest"
+               BlueprintName = "MBNotesUITests"
+               ReferencedContainer = "container:MBNotes.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -61,6 +75,17 @@
                BlueprintIdentifier = "3D2F250C430E11B64BE99FC1"
                BuildableName = "MBNotesTests.xctest"
                BlueprintName = "MBNotesTests"
+               ReferencedContainer = "container:MBNotes.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "527B50E9501381F596265F2D"
+               BuildableName = "MBNotesUITests.xctest"
+               BlueprintName = "MBNotesUITests"
                ReferencedContainer = "container:MBNotes.xcodeproj">
             </BuildableReference>
          </TestableReference>

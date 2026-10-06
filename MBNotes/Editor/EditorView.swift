@@ -34,6 +34,7 @@ struct EditorView: View {
                 loadError = error.localizedDescription
             }
         }
+        .onDisappear { model?.save() }
     }
 }
 
@@ -60,6 +61,7 @@ private struct EditorContent: View {
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.supportsMultipleWindows) private var supportsMultipleWindows
     @State private var sheet: EditorSheet?
+    @State private var showingCollaboration = false
     @State private var showInspector = false
     @State private var inspectorTab: InspectorTab = .recordings
     @State private var photoItem: PhotosPickerItem?
@@ -103,6 +105,7 @@ private struct EditorContent: View {
             Button("Cancel", role: .cancel) {}
             Button("Rename") { model.rename(title) }
         }
+        .fullScreenCover(isPresented: $showingCollaboration) { CollaborationView(model: model) }
         .sheet(item: $sheet) { sheet in
             switch sheet {
             case .pages: PageNavigator(model: model)
@@ -142,6 +145,12 @@ private struct EditorContent: View {
         }
         .sensoryFeedback(.impact(weight: .light), trigger: model.hud) { _, new in new != nil }
         .onAppear(perform: setUp)
+        .task {
+            if Bundle.main.object(forInfoDictionaryKey: "MBNotesUIAutomation") as? String == "YES", ProcessInfo.processInfo.arguments.contains("-collaborationFixtureHost") {
+                try? await Task.sleep(for: .milliseconds(700))
+                showingCollaboration = true
+            }
+        }
         .focusedSceneValue(\.editorActions, EditorActions(undo: { model.undo() }, redo: { model.redo() }, setMode: { model.mode = $0 }, deleteSelection: { model.canvas?.deleteSelection() }))
         #if DEBUG
         .task {
@@ -178,6 +187,10 @@ private struct EditorContent: View {
                 .keyboardShortcut("w", modifiers: .command)
         }
 
+        ToolbarItem(placement: .navigation) {
+            Button { showingCollaboration = true } label: { Label("Live Collaboration", systemImage: "person.2.wave.2") }
+                .accessibilityIdentifier("editor-live-collaboration")
+        }
         if compact {
             compactToolbar
         } else {
@@ -323,6 +336,7 @@ private struct EditorContent: View {
         } label: {
             Label("More", systemImage: "ellipsis")
         }
+        .accessibilityIdentifier("editor-more")
     }
 
     @ViewBuilder private var titleMenu: some View {

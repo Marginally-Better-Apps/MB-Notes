@@ -10,7 +10,9 @@
 		04D3BC9C1FE6BA573512179B /* NoteIntelligence in Frameworks */ = {isa = PBXBuildFile; productRef = 3CE0A42E9302267C4F55928B /* NoteIntelligence */; };
 		127C9046DDD9A8E0966E89EB /* ModelsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6DA4DAE8526CF6227F64A2A /* ModelsView.swift */; };
 		18E979472233EF7C15E9F394 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6DCA1148B648FAA45ADC0544 /* Assets.xcassets */; };
+		2CA9E0FCFEE62ED9F1CBCA63 /* CollaborationClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0318DE5D79A1316E0428E138 /* CollaborationClient.swift */; };
 		2E1F943CA100AA87E1B35B28 /* FolderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62BA50A3B9D2AF05DED04F8B /* FolderView.swift */; };
+		392410153CB6BCE8E9F3F4EA /* CollaborationInvitation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A3CA2600C95B8EB78AA78C6 /* CollaborationInvitation.swift */; };
 		3ABD3C055E2EDD60186B7414 /* NoteEngine in Frameworks */ = {isa = PBXBuildFile; productRef = 8136D9D6B3DF51CE76198A6B /* NoteEngine */; };
 		3B005B1149E90DF17445BEE2 /* RecordingViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C85AC778D2512F286FDFC5A /* RecordingViews.swift */; };
 		508B02B55AD5CC32B14A11C3 /* Packs in Resources */ = {isa = PBXBuildFile; fileRef = 0BC0E168C50959D1C1D8D819 /* Packs */; };
@@ -22,10 +24,13 @@
 		5FFEA11D2666D59D9D752514 /* MBNotesApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77E8BF6FE4076603514BAC1D /* MBNotesApp.swift */; };
 		637F523D8672DE44CA57FFD9 /* Search.swift in Sources */ = {isa = PBXBuildFile; fileRef = 226E83D60269473ABE4331D8 /* Search.swift */; };
 		6BC9C1D0CDA86907E0C295B7 /* PacksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B06EEC007FAD593F8ADAD46 /* PacksView.swift */; };
+		755849BBA39E86BCAD2336C0 /* Collaboration in Resources */ = {isa = PBXBuildFile; fileRef = 4A88CDDC95D05271E53967B7 /* Collaboration */; };
+		75C304366AD0117063CE4AC8 /* NearbyTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E170F39C215733F70B00A1B /* NearbyTransport.swift */; };
 		8372EEA2E2D71ADA36D7781B /* PageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13F0CC620068A3CA98AD6850 /* PageView.swift */; };
 		86479BB9755EFEE13BC739E5 /* MBNotesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 941DC9A142D344145AF28C47 /* MBNotesTests.swift */; };
 		8C5B5E058C7604EF37E624E9 /* LibraryItemMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397AC5A6F5D1138C339FBB13 /* LibraryItemMenu.swift */; };
 		8CD72FC846BBEE9CD0C0CE93 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D8BFCC4A1C3084D918A0EC9 /* RootView.swift */; };
+		9060008D9B45A74127295B8D /* CollaborationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44C582A0A13E8F2D43BB888C /* CollaborationTests.swift */; };
 		9541540E50636893D64A83D1 /* FolderEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAA35A82227DC8E8B1568C68 /* FolderEditorSheet.swift */; };
 		9C299FFE18970BDDEFE39B3E /* DocumentScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0758BF6E47C11A4F00898618 /* DocumentScanner.swift */; };
 		B9CC55B04EFC0671E5B6E451 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17C149B7F50C4129B70055E5 /* AppModel.swift */; };
@@ -33,12 +38,16 @@
 		BE953090EF311F8ABA1AD3FE /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B2F3798FE4584040601A017 /* Theme.swift */; };
 		C018845A2171D66B292D210A /* NoteExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B1BBA872FDB1FDC5B814328 /* NoteExport.swift */; };
 		C49855970CF3A1760EA48A28 /* CollectionViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B287DA27DA324DA1E3414F0E /* CollectionViews.swift */; };
+		CB223F5B6DAD43FA900420DF /* Collaboration.json in Resources */ = {isa = PBXBuildFile; fileRef = E844A0E712C8D1F059A28046 /* Collaboration.json */; };
 		D26BA1477AF1B5B79263F16C /* NoteCanvasController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 174CF701B2AC78DC08252AD3 /* NoteCanvasController.swift */; };
+		D36E557EB95897A798B97CA9 /* GalaReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B134C4168F502D326273B97 /* GalaReporter.swift */; };
 		D3C14348EAE2E1C72A826738 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6CC8FA8004EC2B65D6796FC /* SettingsView.swift */; };
+		DDE907DC9CE67E3311BD1199 /* CollaborationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28ADEE181D78B3ECF5995C7E /* CollaborationView.swift */; };
 		E89F76366CE927642592F59D /* EditorSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF4A69A09A7B02DC8A292B06 /* EditorSheets.swift */; };
 		EADFABD02C17D8382728E6BE /* RecordingController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A02D64C5201929A51FE7D1D /* RecordingController.swift */; };
 		F9537D0497A39A95C0C8809C /* EditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7151FE54BE4F9BC2E5CE74B9 /* EditorView.swift */; };
 		FAF522309CB865519C63F314 /* SceneModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 094148C52E54311309803ECD /* SceneModel.swift */; };
+		FD954CC0E1021F223727B5B2 /* CollaborationInteractionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AB70F42E5E1E7AC9100C276 /* CollaborationInteractionTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -49,13 +58,22 @@
 			remoteGlobalIDString = 50C1703FFA72EF514EBC0A12;
 			remoteInfo = MBNotes;
 		};
+		CFA94994C824E4E42C6627A6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8225CFE80EBEF60170FC7B9F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 50C1703FFA72EF514EBC0A12;
+			remoteInfo = MBNotes;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		01A2B3B62ECA93924DA8E740 /* LibraryTiles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryTiles.swift; sourceTree = "<group>"; };
+		0318DE5D79A1316E0428E138 /* CollaborationClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollaborationClient.swift; sourceTree = "<group>"; };
 		0758BF6E47C11A4F00898618 /* DocumentScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentScanner.swift; sourceTree = "<group>"; };
 		094148C52E54311309803ECD /* SceneModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneModel.swift; sourceTree = "<group>"; };
 		0A02D64C5201929A51FE7D1D /* RecordingController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingController.swift; sourceTree = "<group>"; };
+		0B134C4168F502D326273B97 /* GalaReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GalaReporter.swift; sourceTree = "<group>"; };
 		0B2F3798FE4584040601A017 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		0BC0E168C50959D1C1D8D819 /* Packs */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Packs; path = MBNotes/Resources/Packs; sourceTree = SOURCE_ROOT; };
 		13F0CC620068A3CA98AD6850 /* PageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageView.swift; sourceTree = "<group>"; };
@@ -64,13 +82,21 @@
 		1D8BFCC4A1C3084D918A0EC9 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		226E83D60269473ABE4331D8 /* Search.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Search.swift; sourceTree = "<group>"; };
 		236057EE41F367AEF12BBFAA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		28ADEE181D78B3ECF5995C7E /* CollaborationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollaborationView.swift; sourceTree = "<group>"; };
 		2B1BBA872FDB1FDC5B814328 /* NoteExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteExport.swift; sourceTree = "<group>"; };
+		2DF11A9E91FB78A47A4E0035 /* MBNotesUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = MBNotesUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		397AC5A6F5D1138C339FBB13 /* LibraryItemMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryItemMenu.swift; sourceTree = "<group>"; };
 		3B1D34AB9E6D9A35E76ED3DF /* NoteIntelligence */ = {isa = PBXFileReference; lastKnownFileType = folder; name = NoteIntelligence; path = Packages/NoteIntelligence; sourceTree = SOURCE_ROOT; };
 		3B9E3746DFE046E32F7D9F20 /* MBNotes.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = MBNotes.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3C85AC778D2512F286FDFC5A /* RecordingViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingViews.swift; sourceTree = "<group>"; };
+		3E170F39C215733F70B00A1B /* NearbyTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyTransport.swift; sourceTree = "<group>"; };
 		3F45EA5FF995DEF8DE580338 /* EditorModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorModel.swift; sourceTree = "<group>"; };
+		44C582A0A13E8F2D43BB888C /* CollaborationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollaborationTests.swift; sourceTree = "<group>"; };
+		4A88CDDC95D05271E53967B7 /* Collaboration */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Collaboration; path = MBNotes/Resources/Collaboration; sourceTree = SOURCE_ROOT; };
+		4AB70F42E5E1E7AC9100C276 /* CollaborationInteractionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollaborationInteractionTests.swift; sourceTree = "<group>"; };
+		5224BBF9B9FA598AE86DC6B6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		62BA50A3B9D2AF05DED04F8B /* FolderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderView.swift; sourceTree = "<group>"; };
+		6A3CA2600C95B8EB78AA78C6 /* CollaborationInvitation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollaborationInvitation.swift; sourceTree = "<group>"; };
 		6D4B93F49AB70C9263A93C89 /* AIPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIPanel.swift; sourceTree = "<group>"; };
 		6DCA1148B648FAA45ADC0544 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		7151FE54BE4F9BC2E5CE74B9 /* EditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorView.swift; sourceTree = "<group>"; };
@@ -86,6 +112,7 @@
 		B287DA27DA324DA1E3414F0E /* CollectionViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionViews.swift; sourceTree = "<group>"; };
 		B6DA4DAE8526CF6227F64A2A /* ModelsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelsView.swift; sourceTree = "<group>"; };
 		CAA35A82227DC8E8B1568C68 /* FolderEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderEditorSheet.swift; sourceTree = "<group>"; };
+		E844A0E712C8D1F059A28046 /* Collaboration.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Collaboration.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -125,10 +152,31 @@
 			path = Library;
 			sourceTree = "<group>";
 		};
+		086A211033675C086B0E57F7 /* MBNotesUITests */ = {
+			isa = PBXGroup;
+			children = (
+				4AB70F42E5E1E7AC9100C276 /* CollaborationInteractionTests.swift */,
+				5224BBF9B9FA598AE86DC6B6 /* Info.plist */,
+			);
+			path = MBNotesUITests;
+			sourceTree = "<group>";
+		};
+		1066A46154A110E65EC29549 /* Collaboration */ = {
+			isa = PBXGroup;
+			children = (
+				0318DE5D79A1316E0428E138 /* CollaborationClient.swift */,
+				6A3CA2600C95B8EB78AA78C6 /* CollaborationInvitation.swift */,
+				28ADEE181D78B3ECF5995C7E /* CollaborationView.swift */,
+				3E170F39C215733F70B00A1B /* NearbyTransport.swift */,
+			);
+			path = Collaboration;
+			sourceTree = "<group>";
+		};
 		110A7BD1690FD88E38552C59 /* App */ = {
 			isa = PBXGroup;
 			children = (
 				17C149B7F50C4129B70055E5 /* AppModel.swift */,
+				0B134C4168F502D326273B97 /* GalaReporter.swift */,
 				77E8BF6FE4076603514BAC1D /* MBNotesApp.swift */,
 				094148C52E54311309803ECD /* SceneModel.swift */,
 			);
@@ -140,6 +188,7 @@
 			children = (
 				3B9E3746DFE046E32F7D9F20 /* MBNotes.app */,
 				913CFA1BC81B00C008E7BA39 /* MBNotesTests.xctest */,
+				2DF11A9E91FB78A47A4E0035 /* MBNotesUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -149,6 +198,7 @@
 			children = (
 				AF255ADC86E1413D54A08DF5 /* MBNotes */,
 				9731BF66A55CDE313ECAF055 /* MBNotesTests */,
+				086A211033675C086B0E57F7 /* MBNotesUITests */,
 				804716BF15B77492BBB64F4B /* Packages */,
 				1F2B3285CB0CB69C26648B40 /* Products */,
 			);
@@ -158,6 +208,8 @@
 			isa = PBXGroup;
 			children = (
 				6DCA1148B648FAA45ADC0544 /* Assets.xcassets */,
+				4A88CDDC95D05271E53967B7 /* Collaboration */,
+				E844A0E712C8D1F059A28046 /* Collaboration.json */,
 				236057EE41F367AEF12BBFAA /* Info.plist */,
 				0BC0E168C50959D1C1D8D819 /* Packs */,
 			);
@@ -186,6 +238,7 @@
 		9731BF66A55CDE313ECAF055 /* MBNotesTests */ = {
 			isa = PBXGroup;
 			children = (
+				44C582A0A13E8F2D43BB888C /* CollaborationTests.swift */,
 				941DC9A142D344145AF28C47 /* MBNotesTests.swift */,
 			);
 			path = MBNotesTests;
@@ -204,6 +257,7 @@
 			isa = PBXGroup;
 			children = (
 				110A7BD1690FD88E38552C59 /* App */,
+				1066A46154A110E65EC29549 /* Collaboration */,
 				C87F23D5D8C5892439ECF7EA /* Editor */,
 				0587C01F46681FF185231EA8 /* Library */,
 				C77B10530E15E1A92859A862 /* Recording */,
@@ -281,6 +335,24 @@
 			productReference = 3B9E3746DFE046E32F7D9F20 /* MBNotes.app */;
 			productType = "com.apple.product-type.application";
 		};
+		527B50E9501381F596265F2D /* MBNotesUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C2BE42B234D71570C0A175DC /* Build configuration list for PBXNativeTarget "MBNotesUITests" */;
+			buildPhases = (
+				3DFCD373E849CFEB6F7B4C5A /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				44C9A39B304F8B18E7DC1142 /* PBXTargetDependency */,
+			);
+			name = MBNotesUITests;
+			packageProductDependencies = (
+			);
+			productName = MBNotesUITests;
+			productReference = 2DF11A9E91FB78A47A4E0035 /* MBNotesUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -290,6 +362,9 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
+					527B50E9501381F596265F2D = {
+						TestTargetID = 50C1703FFA72EF514EBC0A12;
+					};
 				};
 			};
 			buildConfigurationList = D48A9A411684CAEE2CFE9A0D /* Build configuration list for PBXProject "MBNotes" */;
@@ -311,6 +386,7 @@
 			projectRoot = "";
 			targets = (
 				50C1703FFA72EF514EBC0A12 /* MBNotes */,
+				527B50E9501381F596265F2D /* MBNotesUITests */,
 				3D2F250C430E11B64BE99FC1 /* MBNotesTests */,
 			);
 		};
@@ -322,6 +398,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				18E979472233EF7C15E9F394 /* Assets.xcassets in Resources */,
+				755849BBA39E86BCAD2336C0 /* Collaboration in Resources */,
+				CB223F5B6DAD43FA900420DF /* Collaboration.json in Resources */,
 				508B02B55AD5CC32B14A11C3 /* Packs in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -333,7 +411,16 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9060008D9B45A74127295B8D /* CollaborationTests.swift in Sources */,
 				86479BB9755EFEE13BC739E5 /* MBNotesTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3DFCD373E849CFEB6F7B4C5A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FD954CC0E1021F223727B5B2 /* CollaborationInteractionTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -343,6 +430,9 @@
 			files = (
 				5DFFBBF11E23C49EE6852083 /* AIPanel.swift in Sources */,
 				B9CC55B04EFC0671E5B6E451 /* AppModel.swift in Sources */,
+				2CA9E0FCFEE62ED9F1CBCA63 /* CollaborationClient.swift in Sources */,
+				392410153CB6BCE8E9F3F4EA /* CollaborationInvitation.swift in Sources */,
+				DDE907DC9CE67E3311BD1199 /* CollaborationView.swift in Sources */,
 				C49855970CF3A1760EA48A28 /* CollectionViews.swift in Sources */,
 				9C299FFE18970BDDEFE39B3E /* DocumentScanner.swift in Sources */,
 				569C621B9283598EACB208FC /* EditorModel.swift in Sources */,
@@ -351,10 +441,12 @@
 				555497DBE2DF57E5AD8499EC /* ElementViews.swift in Sources */,
 				9541540E50636893D64A83D1 /* FolderEditorSheet.swift in Sources */,
 				2E1F943CA100AA87E1B35B28 /* FolderView.swift in Sources */,
+				D36E557EB95897A798B97CA9 /* GalaReporter.swift in Sources */,
 				8C5B5E058C7604EF37E624E9 /* LibraryItemMenu.swift in Sources */,
 				BA172BA91AA93B8D7F77EDA2 /* LibraryTiles.swift in Sources */,
 				5FFEA11D2666D59D9D752514 /* MBNotesApp.swift in Sources */,
 				127C9046DDD9A8E0966E89EB /* ModelsView.swift in Sources */,
+				75C304366AD0117063CE4AC8 /* NearbyTransport.swift in Sources */,
 				579BE5AEEBAF9F9D1B5AFA35 /* NewNoteSheet.swift in Sources */,
 				D26BA1477AF1B5B79263F16C /* NoteCanvasController.swift in Sources */,
 				C018845A2171D66B292D210A /* NoteExport.swift in Sources */,
@@ -373,6 +465,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		44C9A39B304F8B18E7DC1142 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 50C1703FFA72EF514EBC0A12 /* MBNotes */;
+			targetProxy = CFA94994C824E4E42C6627A6 /* PBXContainerItemProxy */;
+		};
 		A66103C1235E4D71A50A0845 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 50C1703FFA72EF514EBC0A12 /* MBNotes */;
@@ -411,7 +508,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "MB Notes";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
-				INFOPLIST_KEY_NSCameraUsageDescription = "MB Notes uses the camera only when you choose to take a photo for a note.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "MB Notes uses the camera when you take a photo or scan a live collaboration invitation.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "MB Notes records audio only when you start a recording, so you can play it back alongside your notes.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "MB Notes inserts photos you choose into your notes.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "MB Notes transcribes your recordings on this device so you can search and read them.";
@@ -423,6 +520,8 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MBNOTES_REPORT_URL = "";
+				MBNOTES_UI_AUTOMATION = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = com.marginallybetter.notes;
 				PRODUCT_MODULE_NAME = MBNotes;
 				PRODUCT_NAME = MBNotes;
@@ -490,6 +589,24 @@
 			};
 			name = Release;
 		};
+		85A8DB9B147CC44EDFD4F721 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MBNotesUITests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.marginallybetter.notes.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = MBNotes;
+			};
+			name = Release;
+		};
 		9678EC5E22FE699758737ADC /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -504,6 +621,24 @@
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MBNotes.app/MBNotes";
+			};
+			name = Debug;
+		};
+		9D37F3AA4B7698A11FE3CCE1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MBNotesUITests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.marginallybetter.notes.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = MBNotes;
 			};
 			name = Debug;
 		};
@@ -585,7 +720,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "MB Notes";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
-				INFOPLIST_KEY_NSCameraUsageDescription = "MB Notes uses the camera only when you choose to take a photo for a note.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "MB Notes uses the camera when you take a photo or scan a live collaboration invitation.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "MB Notes records audio only when you start a recording, so you can play it back alongside your notes.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "MB Notes inserts photos you choose into your notes.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "MB Notes transcribes your recordings on this device so you can search and read them.";
@@ -597,6 +732,8 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MBNOTES_REPORT_URL = "";
+				MBNOTES_UI_AUTOMATION = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = com.marginallybetter.notes;
 				PRODUCT_MODULE_NAME = MBNotes;
 				PRODUCT_NAME = MBNotes;
@@ -623,6 +760,15 @@
 			buildConfigurations = (
 				9678EC5E22FE699758737ADC /* Debug */,
 				4094EE9A22444A1E6C7649FD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		C2BE42B234D71570C0A175DC /* Build configuration list for PBXNativeTarget "MBNotesUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9D37F3AA4B7698A11FE3CCE1 /* Debug */,
+				85A8DB9B147CC44EDFD4F721 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
